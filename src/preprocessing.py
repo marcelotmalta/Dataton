@@ -39,7 +39,14 @@ def clean_data(df):
     subset_check = [c for c in ['PORTUG', 'MATEM'] if c in df.columns]
     initial_len = len(df)
     df = df.dropna(subset=subset_check)
-    print(f"Removidas {initial_len - len(df)} linhas com notas nulas.")
+    if len(df) < initial_len:
+        print(f"Removidas {initial_len - len(df)} linhas com notas nulas.")
+
+    # Remove duplicates
+    before_dedup = len(df)
+    df = df.drop_duplicates()
+    if len(df) < before_dedup:
+        print(f"Removidas {before_dedup - len(df)} linhas duplicadas.")
     
     return df
 
@@ -83,6 +90,80 @@ def encode_features(df):
     if cols_ohe:
         df = pd.get_dummies(df, columns=cols_ohe, drop_first=True, dtype=int)
         
+    return df
+
+def impute_data(df, numeric_strategy='mean', categorical_strategy='mode'):
+    """
+    Imputa valores faltantes.
+    numeric_strategy: 'mean', 'median', 'constant' (0)
+    categorical_strategy: 'mode', 'constant' ('MISSING')
+    """
+    # Identificar colunas numéricas e categóricas
+    numeric_cols = df.select_dtypes(include=[np.number]).columns
+    categorical_cols = df.select_dtypes(exclude=[np.number]).columns
+    
+    # Imputação Numérica
+    for col in numeric_cols:
+        if df[col].isnull().any():
+            if numeric_strategy == 'mean':
+                fill_val = df[col].mean()
+            elif numeric_strategy == 'median':
+                fill_val = df[col].median()
+            else:
+                fill_val = 0
+            df[col] = df[col].fillna(fill_val)
+            
+    # Imputação Categórica
+    for col in categorical_cols:
+        if df[col].isnull().any():
+            if categorical_strategy == 'mode':
+                if not df[col].mode().empty:
+                    fill_val = df[col].mode()[0]
+                else:
+                    fill_val = 'Unknown'
+            else:
+                fill_val = 'MISSING'
+            df[col] = df[col].fillna(fill_val)
+            
+    return df
+
+def normalize_data(df, method='standard'):
+    """
+    Normaliza colunas numéricas.
+    method: 'standard' (z-score), 'minmax' (0-1)
+    Ignora a coluna TARGET e binárias (0/1).
+    """
+    numeric_cols = df.select_dtypes(include=[np.number]).columns
+    
+    # Filtrar apenas colunas que não são binárias (ex: 0 e 1 apenas) e não são Target
+    cols_to_scale = []
+    for col in numeric_cols:
+        if col == 'TARGET':
+            continue
+        # Verifica se é binária
+        unique_vals = df[col].dropna().unique()
+        if len(unique_vals) <= 2 and set(unique_vals).issubset({0, 1}):
+            continue
+        cols_to_scale.append(col)
+        
+    if not cols_to_scale:
+        return df
+        
+    if method == 'standard':
+        # (x - mean) / std
+        for col in cols_to_scale:
+            mean = df[col].mean()
+            std = df[col].std()
+            if std != 0:
+                df[col] = (df[col] - mean) / std
+    elif method == 'minmax':
+        # (x - min) / (max - min)
+        for col in cols_to_scale:
+            min_val = df[col].min()
+            max_val = df[col].max()
+            if max_val - min_val != 0:
+                df[col] = (df[col] - min_val) / (max_val - min_val)
+                
     return df
 
 def run_preprocessing(filepath, output_path):
