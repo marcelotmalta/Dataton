@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+*.egg-info/
+dist/
+build/
+*.sqlite3
+*.log
+
+# Jupyter
+.ipynb_checkpoints
+
+# Model artifacts
+models/
+*.joblib
+*.pkl
+
+# OS
+.DS_Store
