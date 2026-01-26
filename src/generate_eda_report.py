@@ -16,7 +16,7 @@ def generate_report():
     
     # 1. Pipeline de Limpeza (Cópia do Notebook)
     cols_interest = [
-        'Defas', 'Portug', 'Matem', 'Inglês', 
+        'Defas',  
         'INDE 22', 'IPS', 'IEG', 'IDA', 'IPV', 'IAA', 'IAN',
         'Fase', 'Turma', 'Ano ingresso', 'Instituição de ensino', 'Pedra 22'
     ]

@@ -1,17 +1,14 @@
 # Relatório de Análise Exploratória de Dados (EDA)
 
-**Data de Geração**: 2026-01-25 12:01
+**Data de Geração**: 2026-01-26 19:25
 
 **Total de Registros**: 860
-**Total de Colunas**: 16
+**Total de Colunas**: 13
 
 ## 1. Tipos de Dados
 | Coluna | Tipo |
 | --- | --- |
 | DEFAS | int64 |
-| PORTUG | float64 |
-| MATEM | float64 |
-| INGLÊS | float64 |
 | INDE_22 | float64 |
 | IPS | float64 |
 | IEG | float64 |
@@ -26,19 +23,13 @@
 | PEDRA_22 | str |
 
 ## 2. Valores Ausentes (Missingness)
-| Coluna | Qtd Missing | % Missing |
-| --- | --- | --- |
-| INGLÊS | 577.0 | 67.09% |
-| PORTUG | 2.0 | 0.23% |
-| MATEM | 2.0 | 0.23% |
+
+Não há valores ausentes no dataset filtrado.
 
 ## 3. Estatísticas Descritivas (Numéricas)
 | Coluna | Count | Mean | Std | Min | 25% | 50% | 75% | Max |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | DEFAS | 860.0 | -0.94 | 0.85 | -5.0 | -1.0 | -1.0 | 0.0 | 2.0 |
-| PORTUG | 858.0 | 6.32 | 2.08 | 0.0 | 5.2 | 6.7 | 7.8 | 10.0 |
-| MATEM | 858.0 | 5.81 | 2.41 | 0.0 | 4.3 | 6.0 | 7.8 | 10.0 |
-| INGLÊS | 283.0 | 5.88 | 2.96 | 0.0 | 3.5 | 6.3 | 8.5 | 10.0 |
 | INDE_22 | 860.0 | 7.04 | 1.02 | 3.03 | 6.49 | 7.2 | 7.75 | 9.44 |
 | IPS | 860.0 | 6.9 | 1.07 | 2.5 | 6.3 | 7.5 | 7.5 | 10.0 |
 | IEG | 860.0 | 7.89 | 1.64 | 0.0 | 7.0 | 8.3 | 9.1 | 10.0 |
@@ -64,23 +55,10 @@
 ## 5. Correlações (Pearson)
 | Variável 1 | Variável 2 | Correlação |
 | --- | --- | --- |
-| IDA | INGLÊS | 0.9 |
-| IDA | MATEM | 0.87 |
 | IAN | DEFAS | 0.84 |
-| IDA | PORTUG | 0.83 |
 | IDA | INDE_22 | 0.82 |
 | IEG | INDE_22 | 0.8 |
 | IPV | INDE_22 | 0.79 |
-| INDE_22 | INGLÊS | 0.72 |
-| INDE_22 | PORTUG | 0.69 |
-| INDE_22 | MATEM | 0.69 |
 | IPV | IDA | 0.62 |
-| IPV | INGLÊS | 0.61 |
 | IPV | IEG | 0.59 |
-| IEG | INGLÊS | 0.58 |
-| INGLÊS | PORTUG | 0.56 |
 | IDA | IEG | 0.56 |
-| INGLÊS | MATEM | 0.55 |
-| IPV | MATEM | 0.55 |
-| IEG | PORTUG | 0.54 |
-| MATEM | PORTUG | 0.53 |
