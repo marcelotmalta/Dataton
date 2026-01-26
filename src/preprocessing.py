@@ -13,7 +13,7 @@ def load_and_filter(filepath):
     
     # 1. Seleção de Colunas
     cols_interest = [
-        'Defas', 'Portug', 'Matem',  # (Removido: Inglês - Regra 1)
+        'Defas', 
         'INDE 22', 'IPS', 'IEG', 'IDA', 'IPV', 'IAA', # (Removido: IAN - Regra 3)
         'Fase', 'Ano ingresso', 'Instituição de ensino', 'Pedra 22' # (Removido: Turma - Regra 5)
     ]
