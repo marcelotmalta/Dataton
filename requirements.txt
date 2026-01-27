@@ -7,3 +7,4 @@ pytest
 python-dotenv
 openpyxl
 matplotlib
+shap
