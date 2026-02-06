@@ -8,3 +8,5 @@ python-dotenv
 openpyxl
 matplotlib
 shap
+requests
+streamlit
