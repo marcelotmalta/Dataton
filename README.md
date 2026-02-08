@@ -66,7 +66,7 @@ Busca alunos pelo nome (parcial, case-insensitive).
 - **Retorno**: Lista de alunos encontrados com todas as colunas disponíveis.
 
 ### `POST /predict`
-Realiza a predição da Pedra Conceito.
+Realiza a predição da Pedra Conceito com análise de risco e sugestões de ação.
 - **Body**:
     ```json
     {
@@ -85,14 +85,133 @@ Realiza a predição da Pedra Conceito.
     ```json
     {
       "prediction": "Pedra A",
-      "probabilities": { ... },
+      "probabilities": {
+        "Pedra A": 0.85,
+        "Pedra B": 0.10,
+        "Pedra C": 0.05
+      },
+      "risk_score": 0.003,
+      "risk_tier": "Baixo",
+      "acao_sugerida": "Monitoramento e Micro-intervenção",
+      "suggested_messages": {
+        "family": "Acompanhamento de rotina; entraremos em contato se houver piora.",
+        "professor": "Monitorar evolução e aplicar micro-intervenção se necessário."
+      },
       "input_features": { ... }
     }
     ```
 
 ## Estrutura do Projeto
 
-- `app/`: Código fonte da API (`main.py`).
-- `data/`: Arquivos de dados (`df_Base_final.csv`).
-- `models/`: Modelos treinados (`.pkl`).
-- `tests/`: Testes automatizados.
+```
+Dataton-1/
+├── app/                          # 📦 Código fonte da API
+│   ├── routes/                   # Endpoints da API (health, students, predictions)
+│   ├── services/                 # Lógica de negócio (model, student, prediction services)
+│   ├── static/                   # Arquivos estáticos (HTML, CSS, JS)
+│   │   ├── index.html           # Interface web principal
+│   │   ├── styles.css           # Estilos da aplicação
+│   │   └── script.js            # Lógica JavaScript do frontend
+│   ├── utils/                    # Funções auxiliares e helpers
+│   ├── config.py                # Configurações centralizadas
+│   ├── main.py                  # Ponto de entrada da aplicação FastAPI
+│   └── models.py                # Modelos Pydantic para validação de dados
+│
+├── data/                         # 📊 Dados do projeto
+│   ├── df_Base_final.csv        # Base de dados processada para o modelo
+│   ├── BASE DE DADOS PEDE 2024 - DATATHON.xlsx  # Dados originais
+│   └── lista_intervencao_preventiva_2025.csv    # Lista de intervenções
+│
+├── models/                       # 🤖 Modelos de Machine Learning
+│   └── modelo_pedra_conceito_xgb_2025.pkl       # Modelo XGBoost treinado
+│
+├── notebooks/                    # 📓 Jupyter Notebooks para análise
+│   ├── 1 - obtendoDados.ipynb   # Extração e preparação dos dados
+│   ├── 2 - EDA.ipynb            # Análise exploratória de dados
+│   ├── 3 - modelo.ipynb         # Treinamento e avaliação do modelo
+│   └── README.md                # Documentação dos notebooks
+│
+├── docs/                         # 📚 Documentação do projeto
+│   ├── dicionarioDados.md       # Dicionário de dados com descrição das colunas
+│   ├── test_scenarios.md        # Cenários de teste documentados
+│   ├── docx/                    # Documentos em formato Word
+│   └── pdf/                     # Documentos em formato PDF
+│
+├── tests/                        # 🧪 Testes automatizados
+│   ├── test_api.py              # Testes dos endpoints da API
+│   ├── test_scenarios.py        # Testes de cenários específicos
+│   └── __init__.py              # Inicialização do pacote de testes
+│
+├── .github/                      # ⚙️ Configurações do GitHub
+│   └── workflows/               # GitHub Actions para CI/CD
+│
+├── requirements.txt              # 📋 Dependências Python do projeto
+├── Dockerfile                    # 🐳 Configuração Docker
+├── Makefile                      # 🛠️ Comandos úteis para desenvolvimento
+├── conftest.py                   # Configuração do Pytest
+└── README.md                     # 📖 Este arquivo
+```
+
+### Descrição Detalhada das Pastas
+
+#### 📦 `app/` - Aplicação Principal
+Contém todo o código fonte da API REST construída com FastAPI.
+
+- **`routes/`**: Define os endpoints HTTP da API
+  - `health.py`: Endpoint de verificação de saúde
+  - `students.py`: Endpoints para consulta de alunos
+  - `predictions.py`: Endpoints para predições do modelo
+
+- **`services/`**: Camada de lógica de negócio
+  - `model_service.py`: Gerenciamento e carregamento do modelo ML
+  - `student_service.py`: Operações relacionadas a dados de alunos
+  - `prediction_service.py`: Lógica de predição e análise de risco
+
+- **`static/`**: Interface web do usuário
+  - `index.html`: Página HTML principal (156 linhas)
+  - `styles.css`: Estilos CSS organizados (213 linhas)
+  - `script.js`: JavaScript com funções documentadas (203 linhas)
+
+- **`utils/`**: Funções auxiliares reutilizáveis
+  - `helpers.py`: Funções para sanitização, cálculo de risco, etc.
+
+#### 📊 `data/` - Dados
+Armazena os datasets utilizados pelo projeto.
+
+- `df_Base_final.csv`: Base de dados processada e limpa
+- `BASE DE DADOS PEDE 2024 - DATATHON.xlsx`: Dados originais do PEDE
+- `lista_intervencao_preventiva_2025.csv`: Lista de alunos para intervenção
+
+#### 🤖 `models/` - Modelos Treinados
+Contém os modelos de Machine Learning serializados.
+
+- `modelo_pedra_conceito_xgb_2025.pkl`: Modelo XGBoost para classificação
+
+#### 📓 `notebooks/` - Análises
+Jupyter Notebooks com todo o processo de desenvolvimento do modelo.
+
+1. **Obtenção de Dados**: Extração e preparação inicial
+2. **EDA**: Análise exploratória e visualizações
+3. **Modelo**: Treinamento, validação e exportação
+
+#### 📚 `docs/` - Documentação
+Documentação técnica e funcional do projeto.
+
+- `dicionarioDados.md`: Descrição detalhada de todas as colunas
+- `test_scenarios.md`: Cenários de teste com exemplos
+
+#### 🧪 `tests/` - Testes
+Testes automatizados para garantir qualidade do código.
+
+- `test_api.py`: Testes de integração dos endpoints
+- `test_scenarios.py`: Testes de casos de uso específicos
+
+## Tecnologias Utilizadas
+
+- **Backend**: FastAPI, Uvicorn
+- **Machine Learning**: XGBoost, Scikit-learn, SHAP
+- **Data Processing**: Pandas, NumPy
+- **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
+- **Testing**: Pytest, HTTPX
+- **Containerization**: Docker
+

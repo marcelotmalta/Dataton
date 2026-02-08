@@ -3,6 +3,7 @@
 
 | Nome da Variável | Descrição                                               | Dimensão / Categoria     | Fonte do Dado                            |
 | ---------------- | ------------------------------------------------------- | ------------------------ | ---------------------------------------- |
+| **NOME**         | Identificador do aluno                                  | Identificação            | Registro administrativo                  |
 | **INDE**         | Índice de Desenvolvimento Educacional (Indicador Geral) | Geral                    | Composto                                 |
 | **IAN**          | Indicador de adequação de nível                         | Dimensão Acadêmica       | Registros administrativos                |
 | **IDA**          | Indicador de desempenho acadêmico                       | Dimensão Acadêmica       | Notas de Provas e Média Geral            |
@@ -13,6 +14,7 @@
 | **IPV**          | Indicador do Ponto de Virada                            | Dimensão Psicopedagógica | Questionário de pedagogos e professores  |
 | **ANO**          | Ano de referência da coleta dos dados                   | Identificação            | Registro histórico                       |
 | **FASE**         | Fase escolar do aluno (Ex: 0 a 7 ou Fase 8)             | Identificação            | Registro administrativo                  |
+| **FASE IDEAL**   | Fase escolar ideal para o aluno                         | Identificação            | Calculado / Registro                     |
 | **DEFA**         | Diferença entre a fase atual e a fase ideal             | Análise de Desempenho    | Calculado                                |
 
 ### Categorização dos Indicadores (Conforme Metodologia)
