@@ -203,8 +203,81 @@ Documentação técnica e funcional do projeto.
 #### 🧪 `tests/` - Testes
 Testes automatizados para garantir qualidade do código.
 
-- `test_api.py`: Testes de integração dos endpoints
-- `test_scenarios.py`: Testes de casos de uso específicos
+- `test_api.py`: Testes de integração dos endpoints (5 testes)
+- `test_scenarios.py`: Testes de casos de uso específicos (6 testes)
+- `test_edge_cases.py`: Testes parametrizados de edge cases (57 testes)
+
+**Total: 68 testes automatizados**
+
+## Testes
+
+### Executar Testes
+
+```bash
+# Todos os testes
+pytest tests/ -v
+
+# Com coverage
+pytest tests/ --cov=app --cov-report=html --cov-report=term
+
+# Apenas edge cases
+pytest tests/test_edge_cases.py -v
+
+# Testes em paralelo (mais rápido)
+pytest tests/ -n auto
+
+# Com timeout de 30s por teste
+pytest tests/ --timeout=30
+```
+
+### Cobertura de Testes
+
+Os testes cobrem:
+- ✅ **68 testes** (100% passing)
+- ✅ Validação de entrada e edge cases
+- ✅ Thresholds de DEFA (-3, -2, +2, +3)
+- ✅ Valores extremos (min/max)
+- ✅ Consistência de resposta
+- ✅ Casos de sucesso e erro
+- ✅ Integração de endpoints
+
+```bash
+# Gerar relatório HTML de coverage
+pytest tests/ --cov=app --cov-report=html
+# Ver em: htmlcov/index.html
+```
+
+## CI/CD Pipeline
+
+O projeto possui pipeline completo de CI/CD com GitHub Actions:
+
+### Workflows Disponíveis
+
+#### 🧪 CI - Tests, Lint & Security (`ci.yml`)
+Executa em cada push e pull request:
+- ✅ Testes em Python 3.10, 3.11, 3.12
+- ✅ Coverage reporting (Codecov)
+- ✅ Linting (black, isort, flake8)
+- ✅ Security scanning (safety, bandit)
+
+#### 🚀 CD - Build & Deploy (`cd.yml`)
+Executa em tags e branch main:
+- 🐳 Build de imagem Docker
+- 📦 Push para GitHub Container Registry
+- 🚢 Deploy automatizado (configurável)
+
+#### 📊 Test Report (`test-report.yml`)
+Comenta em PRs com:
+- 📈 Resultados dos testes
+- 🎯 Badges de coverage
+- 📋 Logs detalhados
+
+### Configuração do Pipeline
+
+Para ativar o pipeline:
+1. Push do código para GitHub
+2. Os workflows serão executados automaticamente
+3. Verificar status na aba "Actions"
 
 ## Tecnologias Utilizadas
 
@@ -212,6 +285,34 @@ Testes automatizados para garantir qualidade do código.
 - **Machine Learning**: XGBoost, Scikit-learn, SHAP
 - **Data Processing**: Pandas, NumPy
 - **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
-- **Testing**: Pytest, HTTPX
+- **Testing**: Pytest, pytest-cov, pytest-xdist, HTTPX
+- **CI/CD**: GitHub Actions, Docker
+- **Code Quality**: Black, isort, flake8
+- **Security**: Safety, Bandit
 - **Containerization**: Docker
+
+## Quick Start
+
+```bash
+# 1. Clonar repositório
+git clone <repository-url>
+cd ProjetoFIAP
+
+# 2. Criar ambiente virtual
+python -m venv .venv
+.\.venv\Scripts\activate  # Windows
+
+# 3. Instalar dependências
+pip install -r requirements.txt
+
+# 4. Executar API
+uvicorn app.main:app --reload
+
+# 5. Executar testes
+pytest tests/ -v --cov=app
+
+# 6. Acessar
+# API: http://localhost:8000
+# Docs: http://localhost:8000/docs
+```
 

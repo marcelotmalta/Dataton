@@ -12,10 +12,15 @@ build/
 # Jupyter
 .ipynb_checkpoints
 
-# Model artifacts
-models/
-*.joblib
-*.pkl
-
 # OS
 .DS_Store
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+.tox/
+test-output.txt
+*.cover
+.hypothesis/
