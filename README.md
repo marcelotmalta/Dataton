@@ -6,7 +6,8 @@ API REST para predição de desempenho estudantil (Pedra Conceito) utilizando mo
 
 Este projeto fornece uma interface para:
 1.  Consultar dados históricos de alunos.
-2.  Prever a "Pedra Conceito" (classificação de desempenho) com base em métricas acadêmicas (IAN, IDA, IEG, IAA, IPS, IPP, IPV).
+2.  Prever a "Pedra Conceito" (classificação de desempenho) com base em métricas acadêmicas 
+(IAN, IDA, IEG, IAA, IPS, IPP, IPV).
 
 O modelo foi treinado com dados históricos e utiliza XGBoost para classificação.
 
@@ -57,31 +58,97 @@ Documentação interativa (Swagger UI): `http://localhost:8000/docs`
 
 ## Endpoints
 
+### **Health Check**
+
 ### `GET /health`
-Verifica o status da API e se o modelo e dados foram carregados corretamente.
+Verifica se a API está operacional e se o modelo e dados foram carregados corretamente.
 
+**Exemplo de resposta**
+
+**Status:** `200 OK`
+
+```json
+{
+  "status": "ok",
+  "model_loaded": true,
+  "data_loaded": true,
+  "model_version":"2025.v1_XGBoost"
+}
+```
+
+### Buscar estudantes
 ### `GET /students/{name}`
-Busca alunos pelo nome (parcial, case-insensitive).
-- **Parâmetros**: `name` (str)
-- **Retorno**: Lista de alunos encontrados com todas as colunas disponíveis.
+Busca estudantes cujo pelo nome contém o termo informado.
 
-### `POST /predict`
-Realiza a predição da Pedra Conceito com análise de risco e sugestões de ação.
-- **Body**:
-    ```json
-    {
-      "IAN": 5.0,
-      "IDA": 7.0,
-      "IEG": 8.0,
-      "IAA": 6.5,
-      "IPS": 7.5,
-      "IPP": 6.0,
-      "IPV": 8.0,
-      "FASE": 1,
-      "DEFA": 0.0
-    }
-    ```
-- **Retorno**:
+**Path Parameters**
+| Parâmetro | Tipo   | Obrigatório | Descrição                          |
+| --------- | ------ | ----------- | ---------------------------------- |
+| name      | string | Sim         | Nome ou parte do nome do estudante |
+
+
+**Exemplo de requisição**
+
+```bash
+curl -X GET "http://localhost:8000/students/joao"
+```
+
+**Exemplo de resposta**
+
+```json
+[
+  {
+    "nome": "João Silva",
+    "IAN": 6.5,
+    "IDA": 7.2,
+    "IEG": 8.1,
+    "Pedra": "Pedra B"
+  }
+]
+```
+
+### Predição de desempenho
+### `POST /predict` 
+Realiza a predição da Pedra Conceito com base nos indicadores acadêmicosdo estudante, incluindo 
+análise de risco e sugestões de ação.
+
+**Request Body**
+**Content-Type:** `application/json`
+
+| Campo | Tipo  | Obrigatório | Descrição                                |
+| ----- | ----- | ----------- | ---------------------------------------- |
+| IAN   | float | Sim         | Indicador de Aprendizagem Numérica       |
+| IDA   | float | Sim         | Indicador de Desempenho Acadêmico        |
+| IEG   | float | Sim         | Indicador de Engajamento                 |
+| IAA   | float | Sim         | Indicador de Aproveitamento Acadêmico    |
+| IPS   | float | Sim         | Indicador de Progresso do Estudante      |
+| IPP   | float | Sim         | Indicador de Persistência e Participação |
+| IPV   | float | Sim         | Indicador de Performance Global          |
+| FASE  | int   | Sim         | Fase educacional do estudante            |
+| DEFA  | float | Sim         | Indicador de defasagem                   |
+
+
+**Exemplo de requisição**
+
+```bash
+curl -X POST "http://localhost:8000/predict" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "IAN": 5.0,
+    "IDA": 7.0,
+    "IEG": 8.0,
+    "IAA": 6.5,
+    "IPS": 7.5,
+    "IPP": 6.0,
+    "IPV": 8.0,
+    "FASE": 1,
+    "DEFA": 0.0
+  }'
+```
+
+**Exemplo de resposta**
+
+**Status:** `200 OK`
+
     ```json
     {
       "prediction": "Pedra A",
@@ -104,21 +171,21 @@ Realiza a predição da Pedra Conceito com análise de risco e sugestões de aç
 ## Estrutura do Projeto
 
 ```
-Dataton-1/
+Datathon/
 ├── app/                          # 📦 Código fonte da API
 │   ├── routes/                   # Endpoints da API (health, students, predictions)
 │   ├── services/                 # Lógica de negócio (model, student, prediction services)
 │   ├── static/                   # Arquivos estáticos (HTML, CSS, JS)
-│   │   ├── index.html           # Interface web principal
-│   │   ├── styles.css           # Estilos da aplicação
-│   │   └── script.js            # Lógica JavaScript do frontend
+│   │   ├── index.html            # Interface web principal
+│   │   ├── styles.css            # Estilos da aplicação
+│   │   └── script.js             # Lógica JavaScript do frontend
 │   ├── utils/                    # Funções auxiliares e helpers
-│   ├── config.py                # Configurações centralizadas
-│   ├── main.py                  # Ponto de entrada da aplicação FastAPI
-│   └── models.py                # Modelos Pydantic para validação de dados
+│   ├── config.py                 # Configurações centralizadas
+│   ├── main.py                   # Ponto de entrada da aplicação FastAPI
+│   └── models.py                 # Modelos Pydantic para validação de dados
 │
 ├── data/                         # 📊 Dados do projeto
-│   ├── df_Base_final.csv        # Base de dados processada para o modelo
+│   ├── df_Base_final.csv         # Base de dados processada para o modelo
 │   ├── BASE DE DADOS PEDE 2024 - DATATHON.xlsx  # Dados originais
 │   └── lista_intervencao_preventiva_2025.csv    # Lista de intervenções
 │
@@ -126,24 +193,24 @@ Dataton-1/
 │   └── modelo_pedra_conceito_xgb_2025.pkl       # Modelo XGBoost treinado
 │
 ├── notebooks/                    # 📓 Jupyter Notebooks para análise
-│   ├── 1 - obtendoDados.ipynb   # Extração e preparação dos dados
-│   ├── 2 - EDA.ipynb            # Análise exploratória de dados
-│   ├── 3 - modelo.ipynb         # Treinamento e avaliação do modelo
-│   └── README.md                # Documentação dos notebooks
+│   ├── 1 - obtendoDados.ipynb    # Extração e preparação dos dados
+│   ├── 2 - EDA.ipynb             # Análise exploratória de dados
+│   ├── 3 - modelo.ipynb          # Treinamento e avaliação do modelo
+│   └── README.md                 # Documentação dos notebooks
 │
 ├── docs/                         # 📚 Documentação do projeto
-│   ├── dicionarioDados.md       # Dicionário de dados com descrição das colunas
-│   ├── test_scenarios.md        # Cenários de teste documentados
-│   ├── docx/                    # Documentos em formato Word
-│   └── pdf/                     # Documentos em formato PDF
+│   ├── dicionarioDados.md        # Dicionário de dados com descrição das colunas
+│   ├── test_scenarios.md         # Cenários de teste documentados
+│   ├── docx/                     # Documentos em formato Word
+│   └── pdf/                      # Documentos em formato PDF
 │
 ├── tests/                        # 🧪 Testes automatizados
-│   ├── test_api.py              # Testes dos endpoints da API
-│   ├── test_scenarios.py        # Testes de cenários específicos
-│   └── __init__.py              # Inicialização do pacote de testes
+│   ├── test_api.py               # Testes dos endpoints da API
+│   ├── test_scenarios.py         # Testes de cenários específicos
+│   └── __init__.py               # Inicialização do pacote de testes
 │
 ├── .github/                      # ⚙️ Configurações do GitHub
-│   └── workflows/               # GitHub Actions para CI/CD
+│   └── workflows/                # GitHub Actions para CI/CD
 │
 ├── requirements.txt              # 📋 Dependências Python do projeto
 ├── Dockerfile                    # 🐳 Configuração Docker
