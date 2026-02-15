@@ -25,12 +25,18 @@
                     <button onclick="searchStudent()" style="width: auto;">Buscar</button>
                 </div>
                 <ul id="studentList" class="student-list"></ul>
+                <p id="loadedStudentInfo" class="loaded-student-info">
+                    Nenhum aluno carregado no simulador.
+                </p>
             </div>
         </div>
 
         <!-- Prediction Simulator Section -->
         <div class="section">
             <h2>Simulador de Previsão</h2>
+            <p class="simulator-hint">
+                Os valores carregados da consulta podem ser ajustados manualmente antes da previsão.
+            </p>
             <form id="predictionForm" onsubmit="event.preventDefault(); predict();">
                 <div class="grid-container">
                     <!-- Performance Indicators (0-10 scale) -->

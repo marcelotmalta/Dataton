@@ -65,7 +65,7 @@ def test_search_student_not_found(client):
 
 def test_predict_success(client):
     # Sample data based on features list
-    # ['IAN', 'IDA', 'IEG', 'IAA', 'IPS', 'IPP', 'IPV', 'FASE', 'Status_DEFA', 'consistencia_acad']
+    # ['IAN', 'IDA', 'IEG', 'IAA', 'IPS', 'IPP', 'IPV', 'FASE', 'consistencia_acad']
     # Inputs: IAN, IDA, IEG, IAA, IPS, IPP, IPV, FASE, DEFA
     
     payload = {

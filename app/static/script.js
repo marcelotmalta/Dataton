@@ -15,6 +15,77 @@ function updateVal(id, val) {
     document.getElementById('val_' + id).innerText = val;
 }
 
+let selectedStudentName = null;
+
+/**
+ * Converts value to number when possible
+ * @param {any} value
+ * @returns {number|null}
+ */
+function toFiniteNumber(value) {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+}
+
+/**
+ * Updates helper text with currently loaded student
+ * @param {Object|null} student
+ * @param {boolean} autoLoaded
+ */
+function updateLoadedStudentInfo(student, autoLoaded = false) {
+    const infoEl = document.getElementById('loadedStudentInfo');
+    if (!infoEl) return;
+
+    if (!student) {
+        infoEl.innerText = 'Nenhum aluno carregado no simulador.';
+        return;
+    }
+
+    const nome = student.NOME || 'Aluno';
+    const ano = toFiniteNumber(student.ANO);
+    const fase = toFiniteNumber(student.FASE);
+
+    const anoFase = [];
+    if (ano !== null) anoFase.push(`Ano ${ano}`);
+    if (fase !== null) anoFase.push(`Fase ${Math.round(fase)}`);
+
+    const origem = autoLoaded ? 'preenchidos automaticamente' : 'carregados';
+    const sufixoAnoFase = anoFase.length ? ` (${anoFase.join(', ')})` : '';
+
+    infoEl.innerText =
+        `${nome}: dados ${origem}${sufixoAnoFase}. ` +
+        'Você pode ajustar os valores no simulador antes de prever.';
+}
+
+/**
+ * Sorts student history by recency (ANO desc, FASE desc)
+ * @param {Array<Object>} historico
+ * @returns {Array<Object>}
+ */
+function sortHistoricoByRecency(historico) {
+    return [...historico].sort((a, b) => {
+        const anoA = toFiniteNumber(a?.ANO) ?? -Infinity;
+        const anoB = toFiniteNumber(b?.ANO) ?? -Infinity;
+        if (anoA !== anoB) return anoB - anoA;
+
+        const faseA = toFiniteNumber(a?.FASE) ?? -Infinity;
+        const faseB = toFiniteNumber(b?.FASE) ?? -Infinity;
+        return faseB - faseA;
+    });
+}
+
+/**
+ * Marks one history item as selected in the student list
+ * @param {HTMLElement} selectedItem
+ * @param {HTMLElement} list
+ */
+function selectHistoryItem(selectedItem, list) {
+    list.querySelectorAll('.student-item.selected').forEach(item => {
+        item.classList.remove('selected');
+    });
+    selectedItem.classList.add('selected');
+}
+
 /* ============================================
    Student Search Functions
    ============================================ */
@@ -24,7 +95,7 @@ function updateVal(id, val) {
  * Makes an API call to /students/{name} endpoint
  */
 async function searchStudent() {
-    const name = document.getElementById('studentName').value;
+    const name = document.getElementById('studentName').value.trim();
     const list = document.getElementById('studentList');
     list.style.display = 'none';
     list.innerHTML = '';
@@ -36,24 +107,39 @@ async function searchStudent() {
         if (!response.ok) throw new Error('Aluno não encontrado');
 
         const data = await response.json(); // data contains {nome: "...", historico: [...]}
+        const historico = Array.isArray(data.historico) ? data.historico : [];
+        if (!historico.length) throw new Error('Aluno sem histórico disponível');
+        const historicoOrdenado = sortHistoricoByRecency(historico);
 
         list.style.display = 'block';
 
-        // Iterate through the student's historical records
-        data.historico.forEach(registro => {
+        // Preencher automaticamente com o registro mais recente
+        const registroMaisRecente = { NOME: data.nome, ...historicoOrdenado[0] };
+        fillForm(registroMaisRecente);
+        updateLoadedStudentInfo(registroMaisRecente, true);
+
+        // Exibir histórico para permitir troca de ano/fase mantendo edição livre dos campos
+        historicoOrdenado.forEach((registro, idx) => {
             const li = document.createElement('li');
             li.className = 'student-item';
-            // Display year and phase clearly
             li.innerText = `${data.nome} - Ano: ${registro.ANO} (Fase: ${registro.FASE})`;
 
-            // On click, fill the form with this specific year's data
             li.onclick = () => {
                 const studentToFill = { NOME: data.nome, ...registro };
+                selectHistoryItem(li, list);
                 fillForm(studentToFill);
+                updateLoadedStudentInfo(studentToFill, false);
             };
+
+            if (idx === 0) {
+                li.classList.add('selected');
+            }
+
             list.appendChild(li);
         });
     } catch (error) {
+        selectedStudentName = null;
+        updateLoadedStudentInfo(null);
         alert(error.message);
     }
 }
@@ -66,18 +152,31 @@ function fillForm(student) {
     const fields = ['IAN', 'IDA', 'IEG', 'IAA', 'IPS', 'IPP', 'IPV', 'FASE', 'DEFA'];
 
     fields.forEach(field => {
-        if (student[field] !== undefined) {
-            const el = document.getElementById(field);
-            el.value = student[field];
-            // Update slider display values (except for DEFA which is a number input)
-            if (field !== 'DEFA') {
-                updateVal(field, student[field]);
+        const el = document.getElementById(field);
+        if (!el) return;
+
+        const parsedValue = toFiniteNumber(student[field]);
+        if (parsedValue === null) {
+            if (field === 'DEFA') {
+                el.value = 0;
             }
+            return;
+        }
+
+        if (field === 'FASE') {
+            const fase = Math.round(parsedValue);
+            el.value = fase;
+            updateVal(field, fase);
+            return;
+        }
+
+        el.value = parsedValue;
+        if (field !== 'DEFA') {
+            updateVal(field, parsedValue.toFixed(1));
         }
     });
 
-    // Hide the student list after selection
-    document.getElementById('studentList').style.display = 'none';
+    selectedStudentName = typeof student.NOME === 'string' ? student.NOME : null;
 }
 
 /* ============================================
@@ -96,6 +195,9 @@ async function predict() {
     fields.forEach(field => {
         data[field] = parseFloat(document.getElementById(field).value);
     });
+    if (selectedStudentName) {
+        data.NOME = selectedStudentName;
+    }
 
     try {
         const response = await fetch('/predict', {
@@ -140,8 +242,10 @@ async function predict() {
  */
 function displayRiskAssessment(result) {
     // Display risk score
-    if (result.risk_score !== undefined) {
-        document.getElementById('riskScore').innerText = result.risk_score.toFixed(3);
+    if (result.risk_score !== undefined && result.risk_score !== null) {
+        const score = Number(result.risk_score);
+        document.getElementById('riskScore').innerText =
+            Number.isFinite(score) ? score.toFixed(3) : '--';
     } else {
         document.getElementById('riskScore').innerText = '--';
     }
@@ -155,6 +259,7 @@ function displayRiskAssessment(result) {
         const riskColors = {
             'Baixo': '#4caf50',
             'Médio': '#ff9800',
+            'Moderado': '#ff9800',
             'Alto': '#f44336',
             'Crítico': '#d32f2f'
         };

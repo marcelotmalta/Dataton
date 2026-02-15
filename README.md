@@ -44,10 +44,14 @@ make run
 A API estará disponível em `http://localhost:8000`.
 Documentação interativa (Swagger UI): `http://localhost:8000/docs`
 
-Opcionalmente, selecione o artefato de modelo via variável de ambiente:
+Opcionalmente, selecione os artefatos via variáveis de ambiente:
 ```bash
-MODEL_JOBLIB_PATH=models/modelo_multiclasse_pedras_2025.pkl uvicorn app.main:app --reload
+MODEL_MULTICLASS_JOBLIB_PATH=models/modelo_multiclasse_pedras_2025.pkl \
+MODEL_RISK_JOBLIB_PATH=models/modelo_risco_critico_2025.pkl \
+uvicorn app.main:app --reload
 ```
+
+Compatibilidade: `MODEL_JOBLIB_PATH` continua aceito como caminho legado do modelo principal.
 
 ### Executando com Docker
 

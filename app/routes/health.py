@@ -20,6 +20,8 @@ def health_check(request: Request):
     return {
         "status": "ok",
         "model_loaded": model_service.model_pipeline is not None,
+        "risk_model_loaded": model_service.model_pipeline_risk is not None,
         "data_loaded": model_service.df_base is not None,
-        "model_version": model_service.model_version
+        "model_version": model_service.model_version,
+        "risk_model_version": model_service.model_version_risk,
     }
