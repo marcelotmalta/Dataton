@@ -14,7 +14,10 @@ logger = logging.getLogger("student_performance_api")
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 # Data/Model relative to project root (one level up from app/)
 DEFAULT_CSV = BASE_DIR.parent / "data" / "df_Base_final.csv"
-DEFAULT_MODEL = BASE_DIR.parent / "models" / "modelo_pedra_conceito_xgb_2025.pkl"
+DEFAULT_MODEL_MULTICLASS = BASE_DIR.parent / "models" / "modelo_multiclasse_pedras_2025.pkl"
+DEFAULT_MODEL_RISK = BASE_DIR.parent / "models" / "modelo_risco_critico_2025.pkl"
+# Backward compatibility alias
+DEFAULT_MODEL = DEFAULT_MODEL_MULTICLASS
 STATIC_DIR = BASE_DIR / "static"
 INDEX_HTML = STATIC_DIR / "index.html"
 

@@ -23,10 +23,17 @@ Focado na compreensão profunda dos indicadores educacionais e na distribuição
 
 ## 3. Modelagem Preditiva (`3 - modelo.ipynb`)
 
-Desenvolvimento de um modelo de Machine Learning para prever a classificação dos alunos.
+Desenvolvimento de modelagem preditiva com dois objetivos complementares: classificação por Pedras e priorização de risco crítico.
 
-*   **Definição do Target**: Cria a variável alvo `Pedra_Conceito` baseada nas faixas de nota do INDE (Quartzo < 6.1, Ágata < 7.2, Ametista < 8.2, Topázio >= 8.2).
-*   **Engenharia de Features**: Criação de novas variáveis, como o `Status_DEFA` para categorizar a defasagem escolar.
-*   **Pré-processamento**: Tratamento de valores ausentes utilizando imputação pela mediana.
-*   **Modelo**: Treinamento de um classificador **Random Forest** para prever o conceito do aluno com base nos indicadores parciais.
-*   **Avaliação**: Medição da acurácia do modelo e análise da importância das variáveis (feature importance) para entender quais indicadores mais influenciam a classificação final.
+*   **Target principal (multiclasse)**: `Pedra_Conceito` com faixas do INDE (Quartzo < 6.1, Ágata < 7.2, Ametista < 8.2, Topázio >= 8.2).
+*   **Target adicional (binário)**: `Risco_Critico`, definido para a fronteira Ágata/Quartzo (`INDE <= 6.6`).
+*   **Engenharia de Features**: uso dos indicadores base (`IAN`, `IDA`, `IEG`, `IAA`, `IPS`, `IPP`, `IPV`, `FASE`) e da variável derivada `consistencia_acad`.
+*   **Pré-processamento**: imputação de nulos com `SimpleImputer(strategy='median')` ajustada no treino.
+*   **Benchmark de modelos**: comparação de três famílias (`LogisticRegression`, `RandomForest`, `XGBoost`) nos dois targets.
+*   **Avaliação**:
+    *   Multiclasse: `Macro F1`, `Log Loss`, `Accuracy`, gaps treino-teste.
+    *   Binário: `Recall` (classe crítica), `F1`, `ROC-AUC`, `Log Loss`, gaps treino-teste.
+*   **Operacionalização**: geração da lista de intervenção para alunos Ágata do ano mais recente acima de um limiar de `Prob_Risco_Critico`.
+*   **Exportação de artefatos**:
+    *   `models/modelo_multiclasse_pedras_2025.pkl`
+    *   `models/modelo_risco_critico_2025.pkl`

@@ -1,14 +1,15 @@
 # Student Performance API (Datathon)
 
-API REST para predição de desempenho estudantil (Pedra Conceito) utilizando modelo XGBoost.
+API REST para predição de desempenho estudantil com classificação por "Pedras" e score de risco crítico.
 
 ## Descrição
 
 Este projeto fornece uma interface para:
 1.  Consultar dados históricos de alunos.
-2.  Prever a "Pedra Conceito" (classificação de desempenho) com base em métricas acadêmicas (IAN, IDA, IEG, IAA, IPS, IPP, IPV).
+2.  Predizer a "Pedra Conceito" (classificação de desempenho) com base em métricas acadêmicas (IAN, IDA, IEG, IAA, IPS, IPP, IPV).
+3.  Estimar score de risco para priorização de intervenção na fronteira Ágata/Quartzo.
 
-O modelo foi treinado com dados históricos e utiliza XGBoost para classificação.
+Os modelos são treinados no notebook `notebooks/3 - modelo.ipynb` e exportados em artefatos `joblib` na pasta `models/`.
 
 ## Como Executar
 
@@ -43,6 +44,15 @@ make run
 A API estará disponível em `http://localhost:8000`.
 Documentação interativa (Swagger UI): `http://localhost:8000/docs`
 
+Opcionalmente, selecione os artefatos via variáveis de ambiente:
+```bash
+MODEL_MULTICLASS_JOBLIB_PATH=models/modelo_multiclasse_pedras_2025.pkl \
+MODEL_RISK_JOBLIB_PATH=models/modelo_risco_critico_2025.pkl \
+uvicorn app.main:app --reload
+```
+
+Compatibilidade: `MODEL_JOBLIB_PATH` continua aceito como caminho legado do modelo principal.
+
 ### Executando com Docker
 
 1.  Construa a imagem:
@@ -63,7 +73,7 @@ Verifica o status da API e se o modelo e dados foram carregados corretamente.
 ### `GET /students/{name}`
 Busca alunos pelo nome (parcial, case-insensitive).
 - **Parâmetros**: `name` (str)
-- **Retorno**: Lista de alunos encontrados com todas as colunas disponíveis.
+- **Retorno**: Objeto com `nome` e `historico` (lista de registros por ano).
 
 ### `POST /predict`
 Realiza a predição da Pedra Conceito com análise de risco e sugestões de ação.
@@ -81,14 +91,15 @@ Realiza a predição da Pedra Conceito com análise de risco e sugestões de aç
       "DEFA": 0.0
     }
     ```
-- **Retorno**:
+- **Retorno** (exemplo):
     ```json
     {
-      "prediction": "Pedra A",
+      "prediction": "Ágata",
       "probabilities": {
-        "Pedra A": 0.85,
-        "Pedra B": 0.10,
-        "Pedra C": 0.05
+        "Quartzo": 0.002,
+        "Ágata": 0.972,
+        "Ametista": 0.022,
+        "Topázio": 0.004
       },
       "risk_score": 0.003,
       "risk_tier": "Baixo",
@@ -123,7 +134,8 @@ Dataton-1/
 │   └── lista_intervencao_preventiva_2025.csv    # Lista de intervenções
 │
 ├── models/                       # 🤖 Modelos de Machine Learning
-│   └── modelo_pedra_conceito_xgb_2025.pkl       # Modelo XGBoost treinado
+│   ├── modelo_multiclasse_pedras_2025.pkl       # Modelo vencedor multiclasse (Pedras)
+│   └── modelo_risco_critico_2025.pkl            # Modelo vencedor binário (Risco Crítico)
 │
 ├── notebooks/                    # 📓 Jupyter Notebooks para análise
 │   ├── 1 - obtendoDados.ipynb   # Extração e preparação dos dados
@@ -185,7 +197,8 @@ Armazena os datasets utilizados pelo projeto.
 #### 🤖 `models/` - Modelos Treinados
 Contém os modelos de Machine Learning serializados.
 
-- `modelo_pedra_conceito_xgb_2025.pkl`: Modelo XGBoost para classificação
+- `modelo_multiclasse_pedras_2025.pkl`: Modelo vencedor multiclasse para `Pedra_Conceito`
+- `modelo_risco_critico_2025.pkl`: Modelo vencedor binário para `Risco_Critico`
 
 #### 📓 `notebooks/` - Análises
 Jupyter Notebooks com todo o processo de desenvolvimento do modelo.
@@ -282,7 +295,7 @@ Para ativar o pipeline:
 ## Tecnologias Utilizadas
 
 - **Backend**: FastAPI, Uvicorn
-- **Machine Learning**: XGBoost, Scikit-learn, SHAP
+- **Machine Learning**: Scikit-learn, XGBoost, SHAP
 - **Data Processing**: Pandas, NumPy
 - **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
 - **Testing**: Pytest, pytest-cov, pytest-xdist, HTTPX
@@ -315,4 +328,3 @@ pytest tests/ -v --cov=app
 # API: http://localhost:8000
 # Docs: http://localhost:8000/docs
 ```
-
