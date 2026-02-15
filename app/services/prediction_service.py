@@ -115,19 +115,25 @@ class PredictionService:
             # Fallback para imputer/scaler se disponível
             try:
                 if imputer is not None:
-                    if hasattr(imputer, "feature_names_in_"):
-                        cols = list(imputer.feature_names_in_)
-                        X_input = df_pred.reindex(columns=cols)
-                        X_for_pred = imputer.transform(X_input)
-                    else:
-                        X_for_pred = imputer.transform(df_pred.values)
+                    try:
+                        if hasattr(imputer, "feature_names_in_"):
+                            cols = list(imputer.feature_names_in_)
+                            X_input = df_pred.reindex(columns=cols)
+                            X_for_pred = imputer.transform(X_input)
+                        else:
+                            X_for_pred = imputer.transform(df_pred.values)
+                    except Exception as imputer_error:
+                        logger.warning(
+                            "Imputer transform failed for %s (%s). Using manual fallback.",
+                            model_name,
+                            imputer_error,
+                        )
+                        X_for_pred = self._manual_imputation_fallback(
+                            df_pred=df_pred,
+                            imputer=imputer,
+                        )
                 else:
-                    if self.model_service.feature_medians is not None:
-                        X_for_pred = df_pred.fillna(
-                            self.model_service.feature_medians.to_dict()
-                        ).values
-                    else:
-                        X_for_pred = df_pred.fillna(0.0).values
+                    X_for_pred = self._manual_imputation_fallback(df_pred=df_pred)
 
                 if scaler is not None:
                     X_for_pred = scaler.transform(X_for_pred)
@@ -141,6 +147,47 @@ class PredictionService:
                     status_code=500,
                     detail="Prediction failed on server",
                 )
+
+    def _manual_imputation_fallback(self, df_pred: pd.DataFrame, imputer=None):
+        """
+        Fallback de imputação sem depender de atributos internos do scikit-learn
+        (útil quando há incompatibilidade de versão no artefato serializado).
+        """
+        if imputer is not None and hasattr(imputer, "feature_names_in_"):
+            cols = list(imputer.feature_names_in_)
+            X_input = df_pred.reindex(columns=cols)
+        else:
+            X_input = df_pred.copy()
+
+        fill_map = {}
+        if imputer is not None and hasattr(imputer, "statistics_"):
+            stats = list(imputer.statistics_)
+            for idx, col in enumerate(X_input.columns):
+                if idx >= len(stats):
+                    break
+                try:
+                    value = float(stats[idx])
+                    if np.isfinite(value):
+                        fill_map[col] = value
+                except Exception:
+                    continue
+
+        if fill_map:
+            X_input = X_input.fillna(fill_map)
+
+        if self.model_service.feature_medians is not None:
+            try:
+                medians = {
+                    c: float(v)
+                    for c, v in self.model_service.feature_medians.to_dict().items()
+                    if c in X_input.columns
+                }
+                if medians:
+                    X_input = X_input.fillna(medians)
+            except Exception:
+                pass
+
+        return X_input.fillna(0.0).values
 
     def calculate_risk_score(
         self,
