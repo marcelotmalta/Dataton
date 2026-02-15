@@ -77,7 +77,14 @@ class PredictionService:
         feature_list = features or self.model_service.features_list or self.DEFAULT_FEATURES
         return pd.DataFrame([{k: input_data.get(k, np.nan) for k in feature_list}])
 
-    def make_prediction(self, df_pred: pd.DataFrame, model, imputer=None, scaler=None):
+    def make_prediction(
+        self,
+        df_pred: pd.DataFrame,
+        model,
+        imputer=None,
+        scaler=None,
+        model_name: str = "model",
+    ):
         """
         Executa predição usando modelo + artefatos de transformação.
 
@@ -129,7 +136,7 @@ class PredictionService:
                 pred_idx = int(model.predict(X_for_pred)[0])
                 return probs, pred_idx
             except Exception as e:
-                logger.exception("Prediction failed: %s", e)
+                logger.exception("Prediction failed for %s: %s", model_name, e)
                 raise HTTPException(
                     status_code=500,
                     detail="Prediction failed on server",
@@ -377,20 +384,47 @@ class PredictionService:
             df_pred_risk = self.prepare_features(input_data, features=risk_features)
 
         # Predição principal (Pedra Conceito)
-        probs_multi, pred_idx_multi = self.make_prediction(
-            df_pred_multi,
-            model=self.model_service.model_pipeline,
-            imputer=self.model_service.imputer,
-            scaler=self.model_service.scaler,
-        )
+        probs_multi, pred_idx_multi = None, None
+        multi_error = None
+        if self.model_service.model_pipeline is not None:
+            try:
+                probs_multi, pred_idx_multi = self.make_prediction(
+                    df_pred_multi,
+                    model=self.model_service.model_pipeline,
+                    imputer=self.model_service.imputer,
+                    scaler=self.model_service.scaler,
+                    model_name="multiclass",
+                )
+            except HTTPException as exc:
+                multi_error = exc
+                logger.exception(
+                    "Multiclass prediction failed; proceeding with risk model fallback if possible."
+                )
 
         # Predição binária (Risco Crítico)
-        probs_risk, pred_idx_risk = self.make_prediction(
-            df_pred_risk,
-            model=self.model_service.model_pipeline_risk,
-            imputer=self.model_service.imputer_risk,
-            scaler=self.model_service.scaler_risk,
-        )
+        probs_risk, pred_idx_risk = None, None
+        risk_error = None
+        if self.model_service.model_pipeline_risk is not None:
+            try:
+                probs_risk, pred_idx_risk = self.make_prediction(
+                    df_pred_risk,
+                    model=self.model_service.model_pipeline_risk,
+                    imputer=self.model_service.imputer_risk,
+                    scaler=self.model_service.scaler_risk,
+                    model_name="risk",
+                )
+            except HTTPException as exc:
+                risk_error = exc
+                logger.exception(
+                    "Risk prediction failed; proceeding with available multiclass output."
+                )
+
+        if (
+            pred_idx_multi is None
+            and pred_idx_risk is None
+            and (multi_error is not None or risk_error is not None)
+        ):
+            raise HTTPException(status_code=500, detail="Prediction failed on server")
 
         # Label exibida: preferir multiclasse
         if pred_idx_multi is not None:
