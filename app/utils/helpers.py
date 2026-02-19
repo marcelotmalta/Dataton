@@ -10,6 +10,8 @@ def sanitize_for_json(obj):
     """
     Sanitiza objetos para serialização JSON, tratando NaN e Inf
     """
+    if isinstance(obj, bool):
+        return obj
     if isinstance(obj, float):
         return None if np.isnan(obj) or np.isinf(obj) else obj
     if isinstance(obj, dict):

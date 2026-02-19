@@ -24,3 +24,9 @@ ALLOWED_ORIGINS = ["*"]  # ajuste em produção
 # ---------- DEFA Thresholds ----------
 DEFA_LARGE_THRESHOLD = 2
 DEFA_MEDIUM_VALUE = 1
+
+# ---------- Diagnostic Thresholds ----------
+THRESHOLD_LOW_ACADEMIC = 5.0    # IDA/IAN abaixo = gargalo acadêmico
+THRESHOLD_LOW_ENGAGEMENT = 5.0  # IEG abaixo = risco de desengajamento
+THRESHOLD_LOW_PSYCHO = 5.0      # IPS/IAA abaixo = vulnerabilidade psicossocial
+TRAJECTORY_STABLE_DELTA = 0.3   # variação absoluta < 0.3 = trajetória estável

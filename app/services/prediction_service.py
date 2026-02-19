@@ -357,3 +357,157 @@ class PredictionService:
         }
         
         return sanitize_for_json(response)
+
+    def simulate_scenario(
+        self,
+        student_name: str,
+        changes: dict
+    ) -> dict:
+        """
+        Simulação contrafactual: testa como mudanças em indicadores
+        afetariam a predição do aluno.
+
+        Permite ao coordenador testar cenários como:
+        "Se este aluno melhorar o IEG em 1 ponto, ele sai da categoria Quartzo?"
+
+        Args:
+            student_name: Nome do estudante
+            changes: Dicionário com mudanças propostas (ex: {"IEG": 6.0})
+
+        Returns:
+            Dicionário com predição original vs simulada e análise de impacto
+        """
+        df = self.model_service.df_base
+
+        if df is None:
+            raise HTTPException(status_code=503, detail="Data not available")
+
+        # Buscar dados atuais do aluno
+        matches = df[df["NOME"].str.fullmatch(student_name, case=False, na=False)]
+        if matches.empty:
+            matches = df[df["NOME"].str.contains(student_name, case=False, na=False)]
+            if matches.empty:
+                raise HTTPException(status_code=404, detail="Student not found")
+
+        real_name = matches.iloc[0]["NOME"]
+        student_records = matches[matches["NOME"] == real_name]
+
+        # Pegar registro mais recente
+        if "ANO" in student_records.columns:
+            latest = student_records.sort_values("ANO", ascending=False).iloc[0]
+        else:
+            latest = student_records.iloc[0]
+
+        # Construir dados originais
+        original_data = {}
+        for col in ["IAN", "IDA", "IEG", "IAA", "IPS", "IPP", "IPV", "FASE", "DEFA"]:
+            val = latest.get(col)
+            if val is not None:
+                try:
+                    import numpy as np
+                    if not np.isnan(float(val)):
+                        original_data[col] = float(val)
+                    else:
+                        original_data[col] = None
+                except (TypeError, ValueError):
+                    original_data[col] = None
+            else:
+                original_data[col] = None
+
+        # Preparar dados originais para predição
+        original_input = original_data.copy()
+        original_input["NOME"] = real_name
+
+        # DEFA semantics
+        try:
+            defa_int_orig = int(round(float(original_input.get("DEFA", 0) or 0)))
+        except Exception:
+            defa_int_orig = 0
+
+        # Predição original
+        df_pred_orig = self.prepare_features(original_input.copy())
+        probs_orig, pred_idx_orig = self.make_prediction(df_pred_orig)
+        risk_orig = self.calculate_risk_score(probs_orig)
+
+        pred_label_orig = str(pred_idx_orig) if pred_idx_orig is not None else "unknown"
+        if self.model_service.mapa_classes_inv and pred_idx_orig is not None:
+            pred_label_orig = self.model_service.mapa_classes_inv.get(
+                int(pred_idx_orig), str(pred_idx_orig)
+            )
+
+        # Construir dados simulados (aplicar mudanças)
+        simulated_input = original_input.copy()
+        original_values = {}
+        for key, new_val in changes.items():
+            if key in simulated_input:
+                original_values[key] = simulated_input[key]
+                simulated_input[key] = float(new_val)
+
+        # DEFA semantics para simulação
+        try:
+            defa_int_sim = int(round(float(simulated_input.get("DEFA", 0) or 0)))
+        except Exception:
+            defa_int_sim = 0
+
+        # Predição simulada
+        df_pred_sim = self.prepare_features(simulated_input.copy())
+        probs_sim, pred_idx_sim = self.make_prediction(df_pred_sim)
+        risk_sim = self.calculate_risk_score(probs_sim)
+
+        pred_label_sim = str(pred_idx_sim) if pred_idx_sim is not None else "unknown"
+        if self.model_service.mapa_classes_inv and pred_idx_sim is not None:
+            pred_label_sim = self.model_service.mapa_classes_inv.get(
+                int(pred_idx_sim), str(pred_idx_sim)
+            )
+
+        # Calcular delta de risco
+        delta_risk = None
+        if risk_orig is not None and risk_sim is not None:
+            delta_risk = round(risk_sim - risk_orig, 4)
+
+        # Avaliar impacto
+        impacto = _evaluate_impact(
+            pred_label_orig, pred_label_sim,
+            risk_orig, risk_sim
+        )
+
+        return sanitize_for_json({
+            "nome": real_name,
+            "original_prediction": pred_label_orig,
+            "simulated_prediction": pred_label_sim,
+            "original_risk": round(risk_orig, 4) if risk_orig is not None else None,
+            "simulated_risk": round(risk_sim, 4) if risk_sim is not None else None,
+            "delta_risk": delta_risk,
+            "impacto": impacto,
+            "changes_applied": changes,
+            "original_values": original_values
+        })
+
+
+def _evaluate_impact(
+    orig_label: str,
+    sim_label: str,
+    orig_risk: float,
+    sim_risk: float
+) -> str:
+    """Avalia o impacto de uma simulação contrafactual"""
+    parts = []
+
+    if orig_label != sim_label:
+        parts.append(
+            f"Mudança de categoria: {orig_label} → {sim_label}."
+        )
+    else:
+        parts.append(f"A categoria se mantém: {orig_label}.")
+
+    if orig_risk is not None and sim_risk is not None:
+        delta = sim_risk - orig_risk
+        if abs(delta) < 0.01:
+            parts.append("Impacto no risco: mínimo.")
+        elif delta < 0:
+            parts.append(f"Risco reduzido em {abs(delta):.2%}. Intervenção recomendada.")
+        else:
+            parts.append(f"Risco aumentou em {delta:.2%}.")
+
+    return " ".join(parts)
+

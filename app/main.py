@@ -16,7 +16,9 @@ from app.config import (
 from app.services.model_service import ModelService
 from app.services.student_service import StudentService
 from app.services.prediction_service import PredictionService
-from app.routes import health, students, predictions
+from app.services.history_service import HistoryService
+from app.services.diagnostic_service import DiagnosticService
+from app.routes import health, students, predictions, analysis
 
 
 # ---------- App ----------
@@ -58,6 +60,14 @@ def startup_event():
     prediction_service = PredictionService(model_service)
     app.state.prediction_service = prediction_service
     
+    # Inicializar serviço de histórico
+    history_service = HistoryService(model_service)
+    app.state.history_service = history_service
+    
+    # Inicializar serviço de diagnóstico
+    diagnostic_service = DiagnosticService(model_service, history_service)
+    app.state.diagnostic_service = diagnostic_service
+    
     logger.info("All services initialized successfully")
 
 
@@ -81,3 +91,4 @@ def serve_index():
 app.include_router(health.router, tags=["Health"])
 app.include_router(students.router, tags=["Students"])
 app.include_router(predictions.router, tags=["Predictions"])
+app.include_router(analysis.router, tags=["Analysis"])
