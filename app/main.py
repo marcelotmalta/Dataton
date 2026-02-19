@@ -15,7 +15,9 @@ from app.config import (
 )
 from app.services.model_service import ModelService
 from app.services.student_service import StudentService
+from app.services.suggestion_service import SuggestionService
 from app.services.prediction_service import PredictionService
+from app.services.simulation_service import SimulationService
 from app.services.history_service import HistoryService
 from app.services.diagnostic_service import DiagnosticService
 from app.routes import health, students, predictions, analysis
@@ -47,24 +49,28 @@ def startup_event():
     """
     Inicializa serviços ao iniciar a aplicação
     """
-    # Inicializar serviço de modelo
+    # Camada de dados
     model_service = ModelService()
     model_service.initialize()
     app.state.model_service = model_service
     
-    # Inicializar serviço de estudantes
+    # Camada de lógica de negócio
     student_service = StudentService(model_service)
     app.state.student_service = student_service
     
-    # Inicializar serviço de predição
-    prediction_service = PredictionService(model_service)
+    suggestion_service = SuggestionService()
+    app.state.suggestion_service = suggestion_service
+    
+    prediction_service = PredictionService(model_service, suggestion_service)
     app.state.prediction_service = prediction_service
     
-    # Inicializar serviço de histórico
+    simulation_service = SimulationService(model_service, prediction_service)
+    app.state.simulation_service = simulation_service
+    
+    # Camada de análise
     history_service = HistoryService(model_service)
     app.state.history_service = history_service
     
-    # Inicializar serviço de diagnóstico
     diagnostic_service = DiagnosticService(model_service, history_service)
     app.state.diagnostic_service = diagnostic_service
     

@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.services.model_service import ModelService
 from app.services.student_service import StudentService
+from app.services.suggestion_service import SuggestionService
 from app.services.prediction_service import PredictionService
 import pytest
 
@@ -22,7 +23,8 @@ def client():
         student_service = StudentService(model_service)
         app.state.student_service = student_service
         
-        prediction_service = PredictionService(model_service)
+        suggestion_service = SuggestionService()
+        prediction_service = PredictionService(model_service, suggestion_service)
         app.state.prediction_service = prediction_service
     
     with TestClient(app) as c:

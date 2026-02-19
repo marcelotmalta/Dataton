@@ -74,8 +74,8 @@ def simulate_scenario(sim_request: SimulationRequest, request: Request):
     Returns:
         Comparação entre predição original e simulada com análise de impacto
     """
-    prediction_service = request.app.state.prediction_service
-    result = prediction_service.simulate_scenario(
+    simulation_service = request.app.state.simulation_service
+    result = simulation_service.simulate_scenario(
         student_name=sim_request.NOME,
         changes=sim_request.changes
     )

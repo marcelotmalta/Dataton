@@ -4,157 +4,283 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Previsão de Desempenho do Aluno</title>
+    <title>Painel Pedagógico — Análise de Desempenho</title>
+    <meta name="description" content="Sistema de suporte à decisão pedagógica com análise de desempenho, trajetória histórica e simulação contrafactual.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/styles.css">
-
 </head>
 
 <body>
+    <!-- Background Particles -->
+    <div class="bg-particles" id="bgParticles"></div>
 
-    <!-- Main Container -->
-    <div class="container">
-        <h1>Análise de Desempenho Escolar</h1>
+    <!-- App Shell -->
+    <div class="app-shell">
 
-        <!-- Student Search Section -->
-        <div class="section">
-            <h2>Consultar Aluno</h2>
-            <div class="form-group">
-                <label for="studentName">Nome do Aluno:</label>
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="studentName" placeholder="Digite o nome do aluno...">
-                    <button onclick="searchStudent()" style="width: auto;">Buscar</button>
-                </div>
-                <ul id="studentList" class="student-list"></ul>
-            </div>
-        </div>
-
-        <!-- Prediction Simulator Section -->
-        <div class="section">
-            <h2>Simulador de Previsão</h2>
-            <form id="predictionForm" onsubmit="event.preventDefault(); predict();">
-                <div class="grid-container">
-                    <!-- Performance Indicators (0-10 scale) -->
-                    <div class="form-group">
-                        <label>IAN (Indicador de Adequação de Nível) <span id="val_IAN"
-                                class="slider-value">5.0</span></label>
-                        <input type="range" id="IAN" min="0" max="10" step="0.1" value="5.0"
-                            oninput="updateVal('IAN', this.value)">
-                    </div>
-
-                    <div class="form-group">
-                        <label>IDA (Indicador de Desempenho Acadêmico) <span id="val_IDA"
-                                class="slider-value">5.0</span></label>
-                        <input type="range" id="IDA" min="0" max="10" step="0.1" value="5.0"
-                            oninput="updateVal('IDA', this.value)">
-                    </div>
-
-                    <div class="form-group">
-                        <label>IEG (Indicador de Engajamento) <span id="val_IEG" class="slider-value">5.0</span></label>
-                        <input type="range" id="IEG" min="0" max="10" step="0.1" value="5.0"
-                            oninput="updateVal('IEG', this.value)">
-                    </div>
-
-                    <div class="form-group">
-                        <label>IAA (Indicador de Autoavaliação) <span id="val_IAA"
-                                class="slider-value">5.0</span></label>
-                        <input type="range" id="IAA" min="0" max="10" step="0.1" value="5.0"
-                            oninput="updateVal('IAA', this.value)">
-                    </div>
-
-                    <div class="form-group">
-                        <label>IPS (Indicador Psico-Social) <span id="val_IPS" class="slider-value">5.0</span></label>
-                        <input type="range" id="IPS" min="0" max="10" step="0.1" value="5.0"
-                            oninput="updateVal('IPS', this.value)">
-                    </div>
-
-                    <div class="form-group">
-                        <label>IPP (Indicador Psicopedagógico) <span id="val_IPP"
-                                class="slider-value">5.0</span></label>
-                        <input type="range" id="IPP" min="0" max="10" step="0.1" value="5.0"
-                            oninput="updateVal('IPP', this.value)">
-                    </div>
-
-                    <div class="form-group">
-                        <label>IPV (Indicador de Ponto de Virada) <span id="val_IPV"
-                                class="slider-value">5.0</span></label>
-                        <input type="range" id="IPV" min="0" max="10" step="0.1" value="5.0"
-                            oninput="updateVal('IPV', this.value)">
-                    </div>
-
-                    <div class="form-group">
-                        <label>FASE (Ano/Série 0-10) <span id="val_FASE" class="slider-value">1</span></label>
-                        <input type="range" id="FASE" min="0" max="10" step="1" value="1"
-                            oninput="updateVal('FASE', this.value)">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="DEFA">DEFA (Defasagem)</label>
-                        <input type="number" id="DEFA" step="0.1" value="0" placeholder="Ex: -1.5 ou 2.0">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">📊</div>
+                    <div>
+                        <h1>Painel Pedagógico</h1>
+                        <p class="subtitle">Sistema de Suporte à Decisão</p>
                     </div>
                 </div>
-
-                <button type="submit" style="margin-top: 20px;">Realizar Previsão</button>
-            </form>
-        </div>
-
-        <!-- Results Section (Hidden by default) -->
-        <div id="result" class="section" style="background: white;">
-            <h2>Resultado da Análise</h2>
-            <div class="result-card">
-                <p>Classificação Prevista:</p>
-                <div id="predictionBadge" class="prediction-badge">--</div>
-
-                <!-- Risk Assessment Section -->
-                <div
-                    style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary-color);">
-                    <h3 style="margin-top: 0; color: #2c3e50;">Avaliação de Risco</h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
-                        <div>
-                            <strong>Score de Risco:</strong>
-                            <div id="riskScore"
-                                style="font-size: 1.3em; color: var(--primary-color); font-weight: bold;">--</div>
-                        </div>
-                        <div>
-                            <strong>Nível de Risco:</strong>
-                            <div id="riskTier" style="font-size: 1.3em; font-weight: bold;">--</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="action-suggestion">
-                    <strong>Ação Sugerida:</strong> <span id="actionText">--</span>
-                </div>
-
-                <!-- Suggested Messages Section -->
-                <div style="margin-top: 20px; text-align: left;">
-                    <h3>Mensagens Sugeridas</h3>
-
-                    <div
-                        style="margin-bottom: 15px; padding: 15px; background: #e8f5e9; border-radius: 8px; border-left: 4px solid #4caf50;">
-                        <strong style="color: #2e7d32; display: block; margin-bottom: 8px;">📨 Para a Família:</strong>
-                        <p id="messageFamily" style="margin: 0; color: #333; line-height: 1.6;">--</p>
-                    </div>
-
-                    <div
-                        style="padding: 15px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196f3;">
-                        <strong style="color: #1565c0; display: block; margin-bottom: 8px;">👨‍🏫 Para o
-                            Professor:</strong>
-                        <p id="messageProfessor" style="margin: 0; color: #333; line-height: 1.6;">--</p>
-                    </div>
-                </div>
-
-                <div style="margin-top: 20px; text-align: left;">
-                    <h3>Probabilidades:</h3>
-                    <ul id="probList"></ul>
+                <div class="header-status" id="apiStatus">
+                    <span class="status-dot"></span>
+                    <span>API Online</span>
                 </div>
             </div>
-        </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <!-- ===== STEP 1: Student Search ===== -->
+            <section class="card card-search" id="searchSection">
+                <div class="card-header">
+                    <span class="step-badge">1</span>
+                    <h2>Consultar Aluno</h2>
+                </div>
+                <div class="search-bar">
+                    <input type="text" id="studentName" placeholder="Digite o nome do aluno..."
+                        autocomplete="off" onkeydown="if(event.key==='Enter') searchStudent()">
+                    <button class="btn btn-primary" onclick="searchStudent()" id="btnSearch">
+                        <span class="btn-icon">🔍</span> Buscar
+                    </button>
+                </div>
+                <div id="searchResults" class="search-results hidden"></div>
+            </section>
+
+            <!-- ===== STUDENT PROFILE (shown after selecting student) ===== -->
+            <section class="card card-profile hidden" id="profileSection">
+                <div class="card-header">
+                    <h2 id="profileName">—</h2>
+                    <span class="badge badge-phase" id="profilePhase">—</span>
+                </div>
+
+                <!-- Tabs Navigation -->
+                <nav class="tabs" id="profileTabs">
+                    <button class="tab active" data-tab="tabHistory" onclick="switchTab('tabHistory', this)">
+                        📋 Histórico
+                    </button>
+                    <button class="tab" data-tab="tabTrajectory" onclick="switchTab('tabTrajectory', this)">
+                        📈 Trajetória
+                    </button>
+                    <button class="tab" data-tab="tabDiagnostic" onclick="switchTab('tabDiagnostic', this)">
+                        🩺 Diagnóstico
+                    </button>
+                </nav>
+
+                <!-- Tab: History -->
+                <div class="tab-content active" id="tabHistory">
+                    <div class="history-table-wrap">
+                        <table class="data-table" id="historyTable">
+                            <thead>
+                                <tr>
+                                    <th>Ano</th><th>Fase</th><th>INDE</th>
+                                    <th>IDA</th><th>IEG</th><th>IPS</th>
+                                    <th>IPV</th><th>DEFA</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab: Trajectory -->
+                <div class="tab-content" id="tabTrajectory">
+                    <div class="trajectory-summary" id="trajectorySummary">
+                        <p class="placeholder-text">Carregando trajetória...</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="trajectoryChart" width="600" height="280"></canvas>
+                    </div>
+                    <div class="ipv-ida-box" id="ipvIdaBox">
+                        <h4>Cruzamento IPV × IDA</h4>
+                        <div id="ipvIdaContent">—</div>
+                    </div>
+                </div>
+
+                <!-- Tab: Diagnostic -->
+                <div class="tab-content" id="tabDiagnostic">
+                    <div id="diagnosticContent">
+                        <p class="placeholder-text">Carregando diagnóstico...</p>
+                    </div>
+                    <div class="diagnostic-summary" id="diagnosticSummary"></div>
+                </div>
+            </section>
+
+            <!-- ===== STEP 2: New Evaluation Input ===== -->
+            <section class="card card-evaluation hidden" id="evaluationSection">
+                <div class="card-header">
+                    <span class="step-badge">2</span>
+                    <h2>Nova Avaliação</h2>
+                </div>
+                <p class="card-description">
+                    Ajuste os indicadores abaixo para registrar a nova avaliação ou testar um cenário.
+                </p>
+                <form id="predictionForm" onsubmit="event.preventDefault(); submitPrediction();">
+                    <div class="indicators-grid">
+                        <div class="indicator-group">
+                            <label>IAN <span class="indicator-label">Adequação de Nível</span></label>
+                            <div class="slider-row">
+                                <input type="range" id="IAN" min="0" max="10" step="0.1" value="5.0"
+                                    oninput="updateSlider('IAN')">
+                                <span class="slider-val" id="val_IAN">5.0</span>
+                            </div>
+                        </div>
+                        <div class="indicator-group">
+                            <label>IDA <span class="indicator-label">Desempenho Acadêmico</span></label>
+                            <div class="slider-row">
+                                <input type="range" id="IDA" min="0" max="10" step="0.1" value="5.0"
+                                    oninput="updateSlider('IDA')">
+                                <span class="slider-val" id="val_IDA">5.0</span>
+                            </div>
+                        </div>
+                        <div class="indicator-group">
+                            <label>IEG <span class="indicator-label">Engajamento</span></label>
+                            <div class="slider-row">
+                                <input type="range" id="IEG" min="0" max="10" step="0.1" value="5.0"
+                                    oninput="updateSlider('IEG')">
+                                <span class="slider-val" id="val_IEG">5.0</span>
+                            </div>
+                        </div>
+                        <div class="indicator-group">
+                            <label>IAA <span class="indicator-label">Autoavaliação</span></label>
+                            <div class="slider-row">
+                                <input type="range" id="IAA" min="0" max="10" step="0.1" value="5.0"
+                                    oninput="updateSlider('IAA')">
+                                <span class="slider-val" id="val_IAA">5.0</span>
+                            </div>
+                        </div>
+                        <div class="indicator-group">
+                            <label>IPS <span class="indicator-label">Psicossocial</span></label>
+                            <div class="slider-row">
+                                <input type="range" id="IPS" min="0" max="10" step="0.1" value="5.0"
+                                    oninput="updateSlider('IPS')">
+                                <span class="slider-val" id="val_IPS">5.0</span>
+                            </div>
+                        </div>
+                        <div class="indicator-group">
+                            <label>IPP <span class="indicator-label">Psicopedagógico</span></label>
+                            <div class="slider-row">
+                                <input type="range" id="IPP" min="0" max="10" step="0.1" value="5.0"
+                                    oninput="updateSlider('IPP')">
+                                <span class="slider-val" id="val_IPP">5.0</span>
+                            </div>
+                        </div>
+                        <div class="indicator-group">
+                            <label>IPV <span class="indicator-label">Ponto de Virada</span></label>
+                            <div class="slider-row">
+                                <input type="range" id="IPV" min="0" max="10" step="0.1" value="5.0"
+                                    oninput="updateSlider('IPV')">
+                                <span class="slider-val" id="val_IPV">5.0</span>
+                            </div>
+                        </div>
+                        <div class="indicator-group">
+                            <label>FASE <span class="indicator-label">Ano/Série</span></label>
+                            <div class="slider-row">
+                                <input type="range" id="FASE" min="0" max="10" step="1" value="1"
+                                    oninput="updateSlider('FASE')">
+                                <span class="slider-val" id="val_FASE">1</span>
+                            </div>
+                        </div>
+                        <div class="indicator-group indicator-defa">
+                            <label>DEFA <span class="indicator-label">Defasagem</span></label>
+                            <input type="number" id="DEFA" step="0.1" value="0" placeholder="Ex: -1.5 ou 2.0">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            🎯 Realizar Previsão
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="runSimulation()"
+                            id="btnSimulate" style="display:none;">
+                            🔬 Simular Cenário
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- ===== STEP 3: Results ===== -->
+            <section class="card card-results hidden" id="resultSection">
+                <div class="card-header">
+                    <span class="step-badge">3</span>
+                    <h2>Resultado da Análise</h2>
+                </div>
+
+                <!-- Prediction Result -->
+                <div class="result-hero">
+                    <div class="prediction-badge-wrap">
+                        <span class="label">Classificação Prevista</span>
+                        <div class="prediction-badge" id="predictionBadge">—</div>
+                    </div>
+                    <div class="risk-meters">
+                        <div class="risk-item">
+                            <span class="label">Score de Risco</span>
+                            <span class="risk-value" id="riskScore">—</span>
+                        </div>
+                        <div class="risk-item">
+                            <span class="label">Nível de Risco</span>
+                            <span class="risk-value" id="riskTier">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Suggestion -->
+                <div class="action-card" id="actionCard">
+                    <div class="action-icon">⚡</div>
+                    <div>
+                        <strong>Ação Sugerida:</strong>
+                        <span id="actionText">—</span>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                <div class="messages-grid">
+                    <div class="message-card message-family">
+                        <div class="message-icon">👨‍👩‍👧</div>
+                        <h4>Mensagem para a Família</h4>
+                        <p id="messageFamily">—</p>
+                    </div>
+                    <div class="message-card message-professor">
+                        <div class="message-icon">👨‍🏫</div>
+                        <h4>Mensagem para o Professor</h4>
+                        <p id="messageProfessor">—</p>
+                    </div>
+                </div>
+
+                <!-- Probabilities -->
+                <details class="probs-details">
+                    <summary>Ver probabilidades por classe</summary>
+                    <div class="probs-bars" id="probBars"></div>
+                </details>
+            </section>
+
+            <!-- ===== Simulation Result (shown after /simulate) ===== -->
+            <section class="card card-simulation hidden" id="simulationSection">
+                <div class="card-header">
+                    <h2>🔬 Resultado da Simulação</h2>
+                </div>
+                <div class="simulation-comparison" id="simulationComparison">
+                    <!-- Filled by JS -->
+                </div>
+                <div class="simulation-impact" id="simulationImpact">—</div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>Passos Futuros — Sistema de Suporte à Decisão Pedagógica &bull; FIAP 2025</p>
+        </footer>
     </div>
 
-    <!-- External JavaScript -->
     <script src="/static/script.js"></script>
-
-
 </body>
 
 </html>
