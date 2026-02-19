@@ -1,12 +1,15 @@
 # Student Performance API (Datathon)
 
-API REST para predição de desempenho estudantil (Pedra Conceito) utilizando modelo XGBoost.
+API REST para predição de desempenho estudantil (Pedra Conceito) utilizando modelo XGBoost, com análise profunda, trajetória histórica e simulação contrafactual.
 
 ## Descrição
 
 Este projeto fornece uma interface para:
 1.  Consultar dados históricos de alunos.
 2.  Prever a "Pedra Conceito" (classificação de desempenho) com base em métricas acadêmicas (IAN, IDA, IEG, IAA, IPS, IPP, IPV).
+3.  Analisar trajetória interanual (tendência do INDE) e cruzamento IPV × IDA.
+4.  Gerar diagnósticos pedagógicos automatizados (acadêmico, engajamento, psicossocial).
+5.  Simular cenários contrafactuais ("E se o aluno melhorar o IEG em 1 ponto?").
 
 O modelo foi treinado com dados históricos e utiliza XGBoost para classificação.
 
@@ -70,144 +73,134 @@ Realiza a predição da Pedra Conceito com análise de risco e sugestões de aç
 - **Body**:
     ```json
     {
-      "IAN": 5.0,
-      "IDA": 7.0,
-      "IEG": 8.0,
-      "IAA": 6.5,
-      "IPS": 7.5,
-      "IPP": 6.0,
-      "IPV": 8.0,
-      "FASE": 1,
-      "DEFA": 0.0
+      "IAN": 5.0, "IDA": 7.0, "IEG": 8.0,
+      "IAA": 6.5, "IPS": 7.5, "IPP": 6.0,
+      "IPV": 8.0, "FASE": 1, "DEFA": 0.0
     }
     ```
 - **Retorno**:
     ```json
     {
-      "prediction": "Pedra A",
-      "probabilities": {
-        "Pedra A": 0.85,
-        "Pedra B": 0.10,
-        "Pedra C": 0.05
-      },
+      "prediction": "Topázio",
+      "probabilities": { "Quartzo": 0.05, "Ágata": 0.10, "Ametista": 0.15, "Topázio": 0.70 },
       "risk_score": 0.003,
       "risk_tier": "Baixo",
       "acao_sugerida": "Monitoramento e Micro-intervenção",
       "suggested_messages": {
         "family": "Acompanhamento de rotina; entraremos em contato se houver piora.",
         "professor": "Monitorar evolução e aplicar micro-intervenção se necessário."
-      },
-      "input_features": { ... }
+      }
     }
     ```
+
+### `GET /students/{name}/analysis`
+Análise profunda do aluno: histórico completo, trajetória, cruzamento IPV × IDA e diagnósticos automatizados.
+- **Retorno**: Diagnósticos com gravidade (grave/moderado/leve), intervenções sugeridas e resumo geral.
+
+### `GET /students/{name}/trajectory`
+Trajetória interanual do INDE com tendência calculada via regressão linear.
+- **Retorno**: Anos, valores INDE, deltas, tendência (ascendente/estável/descendente) e inclinação.
+
+### `GET /students/{name}/ipv-ida`
+Cruzamento IPV × IDA para identificar o tipo de queda (técnica, maturidade, combinada ou nenhuma).
+
+### `POST /simulate`
+Simulação contrafactual: testa cenários "e se?" para um aluno.
+- **Body**:
+    ```json
+    {
+      "NOME": "Aluno-1",
+      "changes": { "IEG": 8.0, "IDA": 7.5 }
+    }
+    ```
+- **Retorno**: Comparação original vs. simulado com delta de risco e impacto.
+
+## Interface Web (Dashboard)
+
+O projeto inclui um **Painel Pedagógico** com dark theme, acessível em `http://localhost:8000`:
+
+1. **Buscar Aluno** — Busca por nome, exibe histórico em tabela clicável por ano
+2. **Perfil do Aluno** — 3 abas:
+   - 📋 **Histórico** — Tabela com indicadores por ano
+   - 📈 **Trajetória** — Gráfico INDE (canvas) + cruzamento IPV × IDA
+   - 🩺 **Diagnóstico** — Cards de severidade com intervenções recomendadas
+3. **Nova Avaliação** — Sliders preenchidos automaticamente + botão de simulação
+4. **Resultado** — Badge colorido por categoria, risco, mensagens para família/professor, probabilidades
 
 ## Estrutura do Projeto
 
 ```
-Dataton-1/
+ProjetoFIAP/
 ├── app/                          # 📦 Código fonte da API
-│   ├── routes/                   # Endpoints da API (health, students, predictions)
-│   ├── services/                 # Lógica de negócio (model, student, prediction services)
-│   ├── static/                   # Arquivos estáticos (HTML, CSS, JS)
-│   │   ├── index.html           # Interface web principal
-│   │   ├── styles.css           # Estilos da aplicação
-│   │   └── script.js            # Lógica JavaScript do frontend
+│   ├── routes/                   # Endpoints da API
+│   │   ├── health.py            # GET /health
+│   │   ├── students.py          # GET /students/{name}
+│   │   ├── predictions.py       # POST /predict
+│   │   └── analysis.py          # Análise, trajetória, IPV×IDA, simulação
+│   ├── services/                 # Lógica de negócio (SRP)
+│   │   ├── model_service.py     # Carregamento do modelo e dados
+│   │   ├── student_service.py   # Busca e consulta de alunos
+│   │   ├── prediction_service.py # Core ML: features, predição, risco
+│   │   ├── suggestion_service.py # Recomendações pedagógicas
+│   │   ├── simulation_service.py # Simulação contrafactual
+│   │   ├── history_service.py   # Trajetória INDE e cruzamento IPV×IDA
+│   │   └── diagnostic_service.py # Diagnóstico pedagógico automatizado
+│   ├── static/                   # Dashboard web (dark theme)
+│   │   ├── index.html           # Painel pedagógico (3 passos)
+│   │   ├── styles.css           # Dark glassmorphism design system
+│   │   └── script.js            # APIs integradas + gráfico canvas
 │   ├── utils/                    # Funções auxiliares e helpers
-│   ├── config.py                # Configurações centralizadas
-│   ├── main.py                  # Ponto de entrada da aplicação FastAPI
-│   └── models.py                # Modelos Pydantic para validação de dados
+│   ├── config.py                # Configurações e thresholds
+│   ├── main.py                  # Ponto de entrada FastAPI
+│   └── models.py                # Modelos Pydantic
 │
 ├── data/                         # 📊 Dados do projeto
-│   ├── df_Base_final.csv        # Base de dados processada para o modelo
-│   ├── BASE DE DADOS PEDE 2024 - DATATHON.xlsx  # Dados originais
-│   └── lista_intervencao_preventiva_2025.csv    # Lista de intervenções
+│   ├── df_Base_final.csv        # Base de dados processada
+│   ├── BASE DE DADOS PEDE 2024 - DATATHON.xlsx
+│   └── lista_intervencao_preventiva_2025.csv
 │
-├── models/                       # 🤖 Modelos de Machine Learning
-│   └── modelo_pedra_conceito_xgb_2025.pkl       # Modelo XGBoost treinado
+├── models/                       # 🤖 Modelo XGBoost treinado
+│   └── modelo_pedra_conceito_xgb_2025.pkl
 │
-├── notebooks/                    # 📓 Jupyter Notebooks para análise
-│   ├── 1 - obtendoDados.ipynb   # Extração e preparação dos dados
-│   ├── 2 - EDA.ipynb            # Análise exploratória de dados
-│   ├── 3 - modelo.ipynb         # Treinamento e avaliação do modelo
-│   └── README.md                # Documentação dos notebooks
+├── notebooks/                    # 📓 Jupyter Notebooks (EDA, modelo)
+│   ├── 1 - obtendoDados.ipynb
+│   ├── 2 - EDA.ipynb
+│   └── 3 - modelo.ipynb
 │
-├── docs/                         # 📚 Documentação do projeto
-│   ├── dicionarioDados.md       # Dicionário de dados com descrição das colunas
-│   ├── test_scenarios.md        # Cenários de teste documentados
-│   ├── docx/                    # Documentos em formato Word
-│   └── pdf/                     # Documentos em formato PDF
+├── docs/                         # 📚 Documentação
+│   ├── dicionarioDados.md
+│   └── test_scenarios.md
 │
-├── tests/                        # 🧪 Testes automatizados
-│   ├── test_api.py              # Testes dos endpoints da API
-│   ├── test_scenarios.py        # Testes de cenários específicos
-│   └── __init__.py              # Inicialização do pacote de testes
+├── tests/                        # 🧪 104 testes automatizados
+│   ├── test_api.py              # Integração dos endpoints principais
+│   ├── test_scenarios.py        # Cenários de uso específicos
+│   ├── test_edge_cases.py       # Edge cases parametrizados
+│   ├── test_history.py          # Testes de trajetória e IPV×IDA
+│   ├── test_diagnostic.py       # Testes de diagnóstico pedagógico
+│   └── test_analysis_api.py     # Integração dos endpoints de análise
 │
-├── .github/                      # ⚙️ Configurações do GitHub
-│   └── workflows/               # GitHub Actions para CI/CD
-│
-├── requirements.txt              # 📋 Dependências Python do projeto
-├── Dockerfile                    # 🐳 Configuração Docker
-├── Makefile                      # 🛠️ Comandos úteis para desenvolvimento
-├── conftest.py                   # Configuração do Pytest
-└── README.md                     # 📖 Este arquivo
+├── requirements.txt
+├── Dockerfile
+├── Makefile
+├── conftest.py
+└── README.md
 ```
 
-### Descrição Detalhada das Pastas
+### Arquitetura de Serviços
 
-#### 📦 `app/` - Aplicação Principal
-Contém todo o código fonte da API REST construída com FastAPI.
+```
+ModelService ─────────────────────────────────┐
+  │                                           │
+  ├── StudentService                          │
+  ├── SuggestionService                       │
+  │     └── PredictionService(model, suggestions)
+  │           └── SimulationService(model, prediction)
+  ├── HistoryService(model)                   │
+  │     └── DiagnosticService(model, history) │
+  └───────────────────────────────────────────┘
+```
 
-- **`routes/`**: Define os endpoints HTTP da API
-  - `health.py`: Endpoint de verificação de saúde
-  - `students.py`: Endpoints para consulta de alunos
-  - `predictions.py`: Endpoints para predições do modelo
-
-- **`services/`**: Camada de lógica de negócio
-  - `model_service.py`: Gerenciamento e carregamento do modelo ML
-  - `student_service.py`: Operações relacionadas a dados de alunos
-  - `prediction_service.py`: Lógica de predição e análise de risco
-
-- **`static/`**: Interface web do usuário
-  - `index.html`: Página HTML principal (156 linhas)
-  - `styles.css`: Estilos CSS organizados (213 linhas)
-  - `script.js`: JavaScript com funções documentadas (203 linhas)
-
-- **`utils/`**: Funções auxiliares reutilizáveis
-  - `helpers.py`: Funções para sanitização, cálculo de risco, etc.
-
-#### 📊 `data/` - Dados
-Armazena os datasets utilizados pelo projeto.
-
-- `df_Base_final.csv`: Base de dados processada e limpa
-- `BASE DE DADOS PEDE 2024 - DATATHON.xlsx`: Dados originais do PEDE
-- `lista_intervencao_preventiva_2025.csv`: Lista de alunos para intervenção
-
-#### 🤖 `models/` - Modelos Treinados
-Contém os modelos de Machine Learning serializados.
-
-- `modelo_pedra_conceito_xgb_2025.pkl`: Modelo XGBoost para classificação
-
-#### 📓 `notebooks/` - Análises
-Jupyter Notebooks com todo o processo de desenvolvimento do modelo.
-
-1. **Obtenção de Dados**: Extração e preparação inicial
-2. **EDA**: Análise exploratória e visualizações
-3. **Modelo**: Treinamento, validação e exportação
-
-#### 📚 `docs/` - Documentação
-Documentação técnica e funcional do projeto.
-
-- `dicionarioDados.md`: Descrição detalhada de todas as colunas
-- `test_scenarios.md`: Cenários de teste com exemplos
-
-#### 🧪 `tests/` - Testes
-Testes automatizados para garantir qualidade do código.
-
-- `test_api.py`: Testes de integração dos endpoints (5 testes)
-- `test_scenarios.py`: Testes de casos de uso específicos (6 testes)
-- `test_edge_cases.py`: Testes parametrizados de edge cases (57 testes)
-
-**Total: 68 testes automatizados**
+Todos os serviços seguem o **Princípio de Responsabilidade Única (SRP)** e são conectados por injeção de dependência no startup da aplicação (`main.py`).
 
 ## Testes
 
@@ -233,13 +226,16 @@ pytest tests/ --timeout=30
 ### Cobertura de Testes
 
 Os testes cobrem:
-- ✅ **68 testes** (100% passing)
+- ✅ **104 testes** (100% passing)
 - ✅ Validação de entrada e edge cases
 - ✅ Thresholds de DEFA (-3, -2, +2, +3)
 - ✅ Valores extremos (min/max)
 - ✅ Consistência de resposta
-- ✅ Casos de sucesso e erro
-- ✅ Integração de endpoints
+- ✅ Trajetória e cruzamento IPV × IDA
+- ✅ Diagnóstico pedagógico (acadêmico, engajamento, psicossocial)
+- ✅ Simulação contrafactual
+- ✅ Integração de todos os endpoints (incluindo novos)
+- ✅ Regressão (endpoints antigos continuam funcionando)
 
 ```bash
 # Gerar relatório HTML de coverage
@@ -284,7 +280,7 @@ Para ativar o pipeline:
 - **Backend**: FastAPI, Uvicorn
 - **Machine Learning**: XGBoost, Scikit-learn, SHAP
 - **Data Processing**: Pandas, NumPy
-- **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
+- **Frontend**: HTML5, CSS3, JavaScript (Vanilla), Canvas API
 - **Testing**: Pytest, pytest-cov, pytest-xdist, HTTPX
 - **CI/CD**: GitHub Actions, Docker
 - **Code Quality**: Black, isort, flake8
@@ -312,7 +308,6 @@ uvicorn app.main:app --reload
 pytest tests/ -v --cov=app
 
 # 6. Acessar
-# API: http://localhost:8000
-# Docs: http://localhost:8000/docs
+# Dashboard: http://localhost:8000
+# Swagger:   http://localhost:8000/docs
 ```
-
