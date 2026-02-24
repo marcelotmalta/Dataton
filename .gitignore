@@ -25,3 +25,8 @@ coverage.xml
 test-output.txt
 *.cover
 .hypothesis/
+
+# mlflow
+
+mlartifacts/
+mlflow.db
