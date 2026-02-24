@@ -30,3 +30,17 @@ Desenvolvimento de um modelo de Machine Learning para prever a classificação d
 *   **Pré-processamento**: Tratamento de valores ausentes utilizando imputação pela mediana.
 *   **Modelo**: Treinamento de um classificador **Random Forest** para prever o conceito do aluno com base nos indicadores parciais.
 *   **Avaliação**: Medição da acurácia do modelo e análise da importância das variáveis (feature importance) para entender quais indicadores mais influenciam a classificação final.
+
+## Executando o MLflow
+
+Para realizar os experimentos e registrar os modelos no o MLflow, execute o servidor de UI a partir do diretório raiz do projeto:
+
+```bash
+mlflow server --port 5000
+```
+
+O comando acima iniciará um servidor web local na porta 5000. Você pode acessar a interface do MLflow em `http://localhost:5000`.
+
+**Nota**: 
+1. Os dados de experimentos, como parâmetros, métricas e artefatos de modelo, são armazenados no diretório `mlruns`, que é criado automaticamente pelo MLflow na primeira execução.
+2. Os diretórios e arquivos gerados automaticamente pelo Mlflow foram ignorados no .gitignore
