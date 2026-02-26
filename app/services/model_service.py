@@ -3,14 +3,16 @@
 Serviço para gerenciamento do modelo de Machine Learning
 """
 import os
-import joblib
 import pandas as pd
-from app.config import logger, DEFAULT_CSV, DEFAULT_MODEL
+import mlflow
+import mlflow.sklearn
+from sklearn.impute import SimpleImputer
+from app.config import logger, DEFAULT_CSV
 
 
 class ModelService:
     """Gerencia carregamento e estado do modelo de ML"""
-    
+
     def __init__(self):
         self.df_base = None
         self.model_pipeline = None
@@ -21,16 +23,16 @@ class ModelService:
         self.model_version = "none"
         self.feature_medians = None
         self.feature_stds = None
-    
+
     def load_data(self, csv_path: str = None):
         """
         Carrega o CSV com dados base dos estudantes
-        
+
         Args:
             csv_path: Caminho para o arquivo CSV (usa DEFAULT_CSV se não fornecido)
         """
         csv_path = csv_path or os.environ.get("DF_CSV_PATH", str(DEFAULT_CSV))
-        
+
         try:
             if os.path.exists(csv_path):
                 self.df_base = pd.read_csv(csv_path)
@@ -41,75 +43,57 @@ class ModelService:
         except Exception as e:
             self.df_base = None
             logger.exception("Error loading CSV: %s", e)
-    
-    def load_model(self, model_path: str = None):
+
+    def load_model(self, model_uri: str = None):
         """
-        Carrega o modelo e artefatos relacionados
-        
+        Carrega o modelo do registro do MLflow.
+
         Args:
-            model_path: Caminho para o arquivo do modelo (usa DEFAULT_MODEL se não fornecido)
+            model_uri: URI do modelo no formato models:/<name>/<version>.
         """
-        model_path = model_path or os.environ.get("MODEL_JOBLIB_PATH", str(DEFAULT_MODEL))
-        
+        mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000"))
+        model_uri = model_uri or os.environ.get("MODEL_URI", "models:/xgb_pedra_conceito_model/latest")
+
         try:
-            if os.path.exists(model_path):
-                loaded = joblib.load(model_path)
-                
-                # Ser permissivo com as chaves
-                self.model_pipeline = (
-                    loaded.get("modelo") or 
-                    loaded.get("model") or 
-                    loaded.get("pipeline") or 
-                    loaded
-                )
-                self.imputer = loaded.get("imputer", None)
-                self.scaler = loaded.get("scaler", None)
-                self.features_list = (
-                    loaded.get("features") or 
-                    loaded.get("features_list") or 
-                    None
-                )
-                
-                mapa = (
-                    loaded.get("mapa_classes") or 
-                    loaded.get("mapa_pedras") or 
-                    loaded.get("map_classes") or 
-                    None
-                )
-                
-                self.model_version = (
-                    loaded.get("versao") or 
-                    loaded.get("version") or 
-                    "unknown"
-                )
-                
-                # Inverter mapa de classes se possível
-                inv = {}
-                if mapa:
-                    for k, v in mapa.items():
-                        try:
-                            inv[int(v)] = str(k)
-                        except Exception:
-                            try:
-                                inv[int(k)] = str(v)
-                            except Exception:
-                                continue
-                
-                self.mapa_classes_inv = inv or None
-                logger.info(f"Loaded model joblib: {model_path} version={self.model_version}")
+            self.model_pipeline = mlflow.sklearn.load_model(model_uri)
+            client = mlflow.tracking.MlflowClient()
+            model_name, model_version_str = model_uri.split('/')[1], model_uri.split('/')[-1]
+
+            if model_version_str == "latest":
+                latest_versions = client.get_latest_versions(model_name, stages=["None"])
+                if latest_versions:
+                    self.model_version = latest_versions[0].version
+                else:
+                    self.model_version = "latest"
             else:
-                self.model_pipeline = None
-                self.imputer = None
-                self.scaler = None
-                self.features_list = None
-                self.mapa_classes_inv = None
-                self.model_version = "none"
-                logger.warning(f"No model joblib found at {model_path}")
+                self.model_version = model_version_str
+            
+            self.features_list = ["IAN", "IDA", "IEG", "IAA", "IPS", "IPP", "IPV",
+                "FASE", "DEFA", "consistencia_acad"
+            ]
+            mapa_pedras = {'Quartzo': 0, 'Ágata': 1, 'Ametista': 2, 'Topázio': 3}
+            
+            self.imputer = SimpleImputer(strategy='median')
+            
+            if self.df_base is not None:
+                X = self.df_base[self.features_list]
+                self.imputer.fit(X)
+                logger.info("Imputer fitted with data from df_base.")
+
+            inv = {int(v): str(k) for k, v in mapa_pedras.items()}
+            self.mapa_classes_inv = inv
+            
+            logger.info(f"Loaded model from MLflow: {model_uri} version={self.model_version}")
+
         except Exception as e:
             self.model_pipeline = None
+            self.imputer = None
+            self.scaler = None
+            self.features_list = None
             self.mapa_classes_inv = None
-            logger.exception("Error loading model joblib: %s", e)
-    
+            self.model_version = "none"
+            logger.exception("Error loading model from MLflow: %s", e)
+
     def compute_feature_statistics(self):
         """
         Calcula medianas e desvios padrão das features para heurística de drivers
@@ -131,7 +115,7 @@ class ModelService:
             self.feature_medians = None
             self.feature_stds = None
             logger.exception("Error computing medians/stds: %s", e)
-    
+
     def initialize(self):
         """
         Inicializa o serviço carregando dados e modelo

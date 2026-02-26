@@ -42,7 +42,7 @@ class PredictionService:
         # Construir vetor de features
         features = self.model_service.features_list or [
             "IAN", "IDA", "IEG", "IAA", "IPS", "IPP", "IPV",
-            "FASE", "Status_DEFA", "consistencia_acad"
+            "FASE", "DEFA", "consistencia_acad"
         ]
 
         df_pred = pd.DataFrame([{
@@ -71,7 +71,8 @@ class PredictionService:
             probs = model.predict_proba(df_pred)[0]
             pred_idx = int(model.predict(df_pred)[0])
             return probs, pred_idx
-        except Exception:
+        except Exception as e:
+            logger.warning("Prediction failed: %s", e)
             return self._prediction_fallback(model, df_pred)
 
     def _prediction_fallback(self, model, df_pred: pd.DataFrame):
