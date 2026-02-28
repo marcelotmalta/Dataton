@@ -1,3 +1,7 @@
+# vscode
+.idea/
+.vscode/
+
 # Python
 __pycache__/
 *.pyc
@@ -26,3 +30,7 @@ coverage.xml
 test-output.txt
 *.cover
 .hypothesis/
+
+# mlflow files
+mlflow.db
+mlartifacts/
