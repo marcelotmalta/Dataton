@@ -65,6 +65,29 @@ Compatibilidade: `MODEL_JOBLIB_PATH` continua aceito como caminho legado do mode
     ```
     Acesse em `http://localhost:8080/docs`.
 
+### Executando com Docker Compose
+
+Para facilitar o desenvolvimento e a execução dos serviços (aplicação e MLflow), você pode usar o Docker Compose.
+
+1.  **Subir os serviços:**
+    Este comando irá construir as imagens (se necessário) e iniciar os containers da aplicação e do MLflow em modo detached.
+
+    ```bash
+    make compose-up
+    ```
+
+2.  **Acessar os serviços:**
+    - **API**: `http://localhost:8000`
+    - **Documentação da API (Swagger UI)**: `http://localhost:8000/docs`
+    - **MLflow UI**: `http://localhost:5000`
+
+3.  **Parar os serviços:**
+    Este comando irá parar e remover os containers.
+
+    ```bash
+    make compose-down
+    ```
+
 ## Endpoints
 
 ### `GET /health`
@@ -259,6 +282,37 @@ Os testes cobrem:
 pytest tests/ --cov=app --cov-report=html
 # Ver em: htmlcov/index.html
 ```
+
+## MLflow Experiment Tracking
+
+Este projeto utiliza [MLflow](https://mlflow.org/) para rastrear experimentos, registrar modelos e visualizar resultados. A forma mais simples de iniciar o ambiente é usando Docker Compose.
+
+### Como Usar com Docker Compose
+
+1.  **Inicie os serviços:**
+    Execute o comando abaixo para iniciar a aplicação e o servidor MLflow.
+
+    ```bash
+    make compose-up
+    ```
+
+2.  **Acesse a MLflow UI:**
+    Abra seu navegador e acesse `http://localhost:5000`. Você verá a interface do MLflow, onde todos os experimentos e execuções serão registrados.
+
+3.  **Execute o Notebook de Treinamento:**
+    Com os serviços em execução, execute o notebook `notebooks/3 - modelo.ipynb`. Ele está configurado para se conectar automaticamente ao servidor MLflow iniciado pelo Docker Compose e registrará os experimentos, modelos, parâmetros e métricas.
+
+4.  **Visualize os Resultados:**
+    Após a execução do notebook, volte para a MLflow UI para comparar as execuções, visualizar os artefatos do modelo e ver qual modelo foi registrado como a melhor versão.
+
+### Carregando Modelos do MLflow
+O notebook também demonstra como carregar a versão mais recente de um modelo registrado:
+```python
+# Exemplo para carregar o modelo binário
+modelo_carregado = mlflow.sklearn.load_model("models:/modelo_vencedor_binario/latest")
+```
+
+Isto garante que a aplicação ou outros notebooks possam sempre usar a melhor versão do modelo de forma programática.
 
 ## CI/CD Pipeline
 
