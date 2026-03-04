@@ -326,7 +326,7 @@ Para ativar o pipeline:
 ## Tecnologias Utilizadas
 
 - **Backend**: FastAPI, Uvicorn
-- **Machine Learning**: Scikit-learn, XGBoost, SHAP
+- **Machine Learning**: Scikit-learn (Regressão Logística), SHAP
 - **Data Processing**: Pandas, NumPy
 - **Frontend**: HTML5, CSS3, JavaScript (Vanilla), Chart.js
 - **Design**: Dark mode, Glassmorphism, Google Fonts (Inter)
