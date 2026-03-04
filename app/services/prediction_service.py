@@ -404,12 +404,13 @@ class PredictionService:
             "suggested_messages": suggested_messages,
         }
 
-    def predict_score(self, metrics: StudentMetrics) -> Dict[str, Any]:
+    def predict_score(self, metrics: StudentMetrics, student_service=None) -> Dict[str, Any]:
         """
         Executa predição completa e gera resposta
 
         Args:
             metrics: Métricas do estudante
+            student_service: Serviço de estudantes para buscar histórico (opcional)
 
         Returns:
             Dicionário com predição, probabilidades, risco e recomendações
@@ -520,6 +521,15 @@ class PredictionService:
             else self.model_service.mapa_classes_inv_risk
         )
 
+        # Buscar histórico se nome do aluno foi fornecido
+        historico = []
+        student_name = input_data.get("NOME")
+        if student_name and student_service is not None:
+            try:
+                historico = student_service.get_student_history(student_name)
+            except Exception:
+                historico = []
+
         response = {
             "prediction": pred_label,
             "prediction_index": int(pred_idx) if pred_idx is not None else None,
@@ -533,6 +543,7 @@ class PredictionService:
             "defa_int": int(defa_int),
             "model_version": self.model_service.model_version,
             "risk_model_version": self.model_service.model_version_risk,
+            "historico": historico,
         }
 
         return sanitize_for_json(response)

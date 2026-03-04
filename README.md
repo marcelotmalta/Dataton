@@ -4,12 +4,14 @@ API REST para predição de desempenho estudantil com classificação por "Pedra
 
 ## Descrição
 
-Este projeto fornece uma interface para:
-1.  Consultar dados históricos de alunos.
-2.  Predizer a "Pedra Conceito" (classificação de desempenho) com base em métricas acadêmicas (IAN, IDA, IEG, IAA, IPS, IPP, IPV).
-3.  Estimar score de risco para priorização de intervenção na fronteira Ágata/Quartzo.
+Este projeto fornece uma interface interativa para:
+1.  **Consultar dados históricos** de alunos com **gráficos de evolução** (Chart.js) mostrando a trajetória dos indicadores ao longo dos anos.
+2.  **Predizer a "Pedra Conceito"** (classificação de desempenho) com base em métricas acadêmicas (IAN, IDA, IEG, IAA, IPS, IPP, IPV).
+3.  **Estimar score de risco** para priorização de intervenção na fronteira Ágata/Quartzo.
+4.  **Gerar recomendações personalizadas** com ações sugeridas para a família e para a escola.
+5.  **Visualizar a nova avaliação no gráfico histórico**, adicionando um ponto ao gráfico de evolução ao realizar uma previsão.
 
-Os modelos são treinados no notebook `notebooks/3 - modelo.ipynb` e exportados em artefatos `joblib` na pasta `models/`.
+A interface web utiliza **dark mode com glassmorphism**, animações e tipografia moderna (Inter). Os modelos são treinados no notebook `notebooks/3 - modelo.ipynb` e exportados em artefatos `joblib` na pasta `models/`.
 
 ## Como Executar
 
@@ -73,7 +75,7 @@ Verifica o status da API e se o modelo e dados foram carregados corretamente.
 ### `GET /students/{name}`
 Busca alunos pelo nome (parcial, case-insensitive).
 - **Parâmetros**: `name` (str)
-- **Retorno**: Objeto com `nome` e `historico` (lista de registros por ano).
+- **Retorno**: Objeto com `nome` e `historico` (lista de registros por ano, ordenados cronologicamente para renderização de gráficos).
 
 ### `POST /predict`
 Realiza a predição da Pedra Conceito com análise de risco e sugestões de ação.
@@ -88,9 +90,11 @@ Realiza a predição da Pedra Conceito com análise de risco e sugestões de aç
       "IPP": 6.0,
       "IPV": 8.0,
       "FASE": 1,
-      "DEFA": 0.0
+      "DEFA": 0.0,
+      "NOME": "Ana Silva"
     }
     ```
+    > **Nota**: Quando `NOME` é fornecido, a resposta inclui o campo `historico` com os registros históricos do aluno, permitindo renderizar o gráfico de evolução no frontend.
 - **Retorno** (exemplo):
     ```json
     {
@@ -108,6 +112,10 @@ Realiza a predição da Pedra Conceito com análise de risco e sugestões de aç
         "family": "Acompanhamento de rotina; entraremos em contato se houver piora.",
         "professor": "Monitorar evolução e aplicar micro-intervenção se necessário."
       },
+      "historico": [
+        { "ANO": 2023, "FASE": 1, "IAN": 5.0, "IDA": 4.0, ... },
+        { "ANO": 2024, "FASE": 2, "IAN": 6.0, "IDA": 5.0, ... }
+      ],
       "input_features": { ... }
     }
     ```
@@ -150,8 +158,12 @@ Dataton-1/
 │   └── pdf/                     # Documentos em formato PDF
 │
 ├── tests/                        # 🧪 Testes automatizados
-│   ├── test_api.py              # Testes dos endpoints da API
+│   ├── test_api.py              # Testes de integração dos endpoints
 │   ├── test_scenarios.py        # Testes de cenários específicos
+│   ├── test_edge_cases.py       # Testes paramétricos de edge cases
+│   ├── test_prediction_service.py # Testes unitários do serviço de predição
+│   ├── test_model_service.py    # Testes unitários do serviço de modelo
+│   ├── test_student_service.py  # Testes unitários do serviço de alunos
 │   └── __init__.py              # Inicialização do pacote de testes
 │
 ├── .github/                      # ⚙️ Configurações do GitHub
@@ -179,10 +191,10 @@ Contém todo o código fonte da API REST construída com FastAPI.
   - `student_service.py`: Operações relacionadas a dados de alunos
   - `prediction_service.py`: Lógica de predição e análise de risco
 
-- **`static/`**: Interface web do usuário
-  - `index.html`: Página HTML principal (156 linhas)
-  - `styles.css`: Estilos CSS organizados (213 linhas)
-  - `script.js`: JavaScript com funções documentadas (203 linhas)
+- **`static/`**: Interface web do usuário (dark mode, glassmorphism)
+  - `index.html`: Página HTML principal com gráficos Chart.js e cards de resultado
+  - `styles.css`: Design system completo (dark mode, glassmorphism, animações, responsivo)
+  - `script.js`: Lógica do frontend com gráficos de evolução, chips de histórico e resultados animados
 
 - **`utils/`**: Funções auxiliares reutilizáveis
   - `helpers.py`: Funções para sanitização, cálculo de risco, etc.
@@ -219,8 +231,11 @@ Testes automatizados para garantir qualidade do código.
 - `test_api.py`: Testes de integração dos endpoints (5 testes)
 - `test_scenarios.py`: Testes de casos de uso específicos (6 testes)
 - `test_edge_cases.py`: Testes parametrizados de edge cases (57 testes)
+- `test_prediction_service.py`: Testes unitários do serviço de predição (49 testes)
+- `test_model_service.py`: Testes unitários do serviço de modelo (25 testes)
+- `test_student_service.py`: Testes unitários do serviço de alunos (10 testes)
 
-**Total: 68 testes automatizados**
+**Total: 164 testes automatizados · Cobertura: 94.29%**
 
 ## Testes
 
@@ -232,6 +247,9 @@ pytest tests/ -v
 
 # Com coverage
 pytest tests/ --cov=app --cov-report=html --cov-report=term
+
+# Apenas testes unitários
+pytest tests/test_prediction_service.py tests/test_model_service.py tests/test_student_service.py -v
 
 # Apenas edge cases
 pytest tests/test_edge_cases.py -v
@@ -246,13 +264,26 @@ pytest tests/ --timeout=30
 ### Cobertura de Testes
 
 Os testes cobrem:
-- ✅ **68 testes** (100% passing)
+- ✅ **164 testes** (100% passing)
+- ✅ **94.29% de cobertura total**
 - ✅ Validação de entrada e edge cases
 - ✅ Thresholds de DEFA (-3, -2, +2, +3)
 - ✅ Valores extremos (min/max)
-- ✅ Consistência de resposta
-- ✅ Casos de sucesso e erro
+- ✅ Cálculo de risco (binário, fallback, média ponderada)
+- ✅ Geração de sugestões (todas as combinações DEFA/risco)
+- ✅ Predição com fallback de imputer/scaler
+- ✅ Carregamento de modelos e bundles
+- ✅ Busca de alunos e histórico
 - ✅ Integração de endpoints
+
+| Módulo                  | Cobertura |
+| ----------------------- | --------- |
+| `student_service.py`    | 100%      |
+| `model_service.py`      | 96.7%     |
+| `prediction_service.py` | 92.8%     |
+| `helpers.py`            | 90.2%     |
+| `main.py`               | 87.9%     |
+| Routes / Models         | 100%      |
 
 ```bash
 # Gerar relatório HTML de coverage
@@ -297,7 +328,8 @@ Para ativar o pipeline:
 - **Backend**: FastAPI, Uvicorn
 - **Machine Learning**: Scikit-learn, XGBoost, SHAP
 - **Data Processing**: Pandas, NumPy
-- **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
+- **Frontend**: HTML5, CSS3, JavaScript (Vanilla), Chart.js
+- **Design**: Dark mode, Glassmorphism, Google Fonts (Inter)
 - **Testing**: Pytest, pytest-cov, pytest-xdist, HTTPX
 - **CI/CD**: GitHub Actions, Docker
 - **Code Quality**: Black, isort, flake8

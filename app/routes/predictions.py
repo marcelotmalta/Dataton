@@ -20,8 +20,9 @@ def predict_score(metrics: StudentMetrics, request: Request):
         request: Request object do FastAPI
         
     Returns:
-        Predição, probabilidades, risco e ações sugeridas
+        Predição, probabilidades, risco, ações sugeridas e histórico
     """
     prediction_service = request.app.state.prediction_service
-    response = prediction_service.predict_score(metrics)
+    student_service = request.app.state.student_service
+    response = prediction_service.predict_score(metrics, student_service=student_service)
     return JSONResponse(content=response)

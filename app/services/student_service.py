@@ -9,18 +9,24 @@ from app.utils.helpers import sanitize_for_json
 class StudentService:
     """Gerencia operações de busca e consulta de estudantes"""
     
+    # Campos retornados no histórico
+    HISTORY_FIELDS = [
+        'ANO', 'FASE', 'IAN', 'IDA', 'IEG', 'IAA', 
+        'IPS', 'IPP', 'IPV', 'DEFA'
+    ]
+    
     def __init__(self, model_service):
         self.model_service = model_service
     
-    def search_student_by_name(self, name: str):
+    def _get_student_matches(self, name: str):
         """
-        Busca estudante por nome e retorna histórico
+        Busca registros do estudante no DataFrame.
         
         Args:
             name: Nome do estudante (busca exata ou parcial)
             
         Returns:
-            Dicionário com nome e histórico do estudante
+            DataFrame com registros encontrados
             
         Raises:
             HTTPException: Se dados não disponíveis ou estudante não encontrado
@@ -45,22 +51,63 @@ class StudentService:
             if matches.empty:
                 raise HTTPException(status_code=404, detail="Student not found")
         
-        first_match = matches.iloc[0]
+        return matches
+    
+    def _build_historico(self, matches):
+        """
+        Constrói lista de histórico ordenada por ANO ascendente.
         
-        # Campos esperados pelo frontend
-        fields_to_return = [
-            'ANO', 'FASE', 'IAN', 'IDA', 'IEG', 'IAA', 
-            'IPS', 'IPP', 'IPV', 'DEFA'
-        ]
-        
+        Args:
+            matches: DataFrame com registros do estudante
+            
+        Returns:
+            Lista de dicionários com dados históricos
+        """
         historico = []
         for _, row in matches.iterrows():
             item = {}
-            for f in fields_to_return:
+            for f in self.HISTORY_FIELDS:
                 item[f] = row.get(f)
             historico.append(item)
+        
+        # Ordenar por ANO ascendente para facilitar gráficos
+        historico.sort(key=lambda x: (x.get('ANO') or 0, x.get('FASE') or 0))
+        return historico
+    
+    def search_student_by_name(self, name: str):
+        """
+        Busca estudante por nome e retorna histórico
+        
+        Args:
+            name: Nome do estudante (busca exata ou parcial)
+            
+        Returns:
+            Dicionário com nome e histórico do estudante
+            
+        Raises:
+            HTTPException: Se dados não disponíveis ou estudante não encontrado
+        """
+        matches = self._get_student_matches(name)
+        first_match = matches.iloc[0]
+        historico = self._build_historico(matches)
         
         return sanitize_for_json({
             "nome": first_match.get("NOME"),
             "historico": historico
         })
+    
+    def get_student_history(self, name: str):
+        """
+        Retorna apenas o histórico de um aluno (usado pelo prediction_service).
+        
+        Args:
+            name: Nome exato ou parcial do aluno
+            
+        Returns:
+            Lista de dicionários com o histórico, ou lista vazia se não encontrado
+        """
+        try:
+            matches = self._get_student_matches(name)
+            return self._build_historico(matches)
+        except HTTPException:
+            return []
