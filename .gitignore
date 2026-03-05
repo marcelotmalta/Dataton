@@ -1,3 +1,6 @@
+# vscode
+.idea/
+.vscode/
 # Python
 __pycache__/
 *.pyc
@@ -9,14 +12,11 @@ dist/
 build/
 *.sqlite3
 *.log
-
 # Jupyter
 .ipynb_checkpoints
-
 # OS
 tmp/
 .DS_Store
-
 # Testing & Coverage
 .pytest_cache/
 .coverage
@@ -26,3 +26,10 @@ coverage.xml
 test-output.txt
 *.cover
 .hypothesis/
+# mlflow files
+mlflow.db
+mlartifacts/
+htmlcov
+.coverage
+coverage.xml
+docker.env

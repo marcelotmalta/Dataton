@@ -23,6 +23,18 @@ Focado na compreensão profunda dos indicadores educacionais e na distribuição
 
 ## 3. Modelagem Preditiva (`3 - modelo.ipynb`)
 
+## Pré-requisitos
+
+Antes de executar o notebook de treinamento `3 - modelo.ipynb`, certifique-se de que os serviços de aplicação e MLflow estão em execução. Para isso, execute o seguinte comando na raiz do projeto:
+
+```bash
+make compose-up
+```
+
+Isso garantirá que o servidor MLflow esteja disponível em `http://localhost:5000` para que o notebook possa se conectar e registrar os experimentos.
+
+## Treinamento do Modelo
+
 Desenvolvimento de modelagem preditiva com dois objetivos complementares: classificação por Pedras e priorização de risco crítico.
 
 *   **Target principal (multiclasse)**: `Pedra_Conceito` com faixas do INDE (Quartzo < 6.1, Ágata < 7.2, Ametista < 8.2, Topázio >= 8.2).
@@ -33,7 +45,13 @@ Desenvolvimento de modelagem preditiva com dois objetivos complementares: classi
 *   **Avaliação**:
     *   Multiclasse: `Macro F1`, `Log Loss`, `Accuracy`, gaps treino-teste.
     *   Binário: `Recall` (classe crítica), `F1`, `ROC-AUC`, `Log Loss`, gaps treino-teste.
+*   **Rastreamento com MLflow**:
+    *   **Servidor de Rastreamento**: O notebook se conecta a um servidor MLflow local (`http://localhost:5000`).
+    *   **Experimentos**: Cria e gerencia dois experimentos: `multiclass_benchmark_pedra_conceito` e `binario_benchmark_risco_critico`.
+    *   **Registro**: Registra automaticamente (`mlflow.autolog()`) ou manualmente parâmetros, métricas e os modelos treinados.
+    *   **Visualização**: Permite a comparação de execuções e a análise de resultados na UI do MLflow.
 *   **Operacionalização**: geração da lista de intervenção para alunos Ágata do ano mais recente acima de um limiar de `Prob_Risco_Critico`.
 *   **Exportação de artefatos**:
     *   `models/modelo_multiclasse_pedras_2025.pkl`
     *   `models/modelo_risco_critico_2025.pkl`
+    *   Modelos também são registrados no MLflow Model Registry para versionamento e acesso programático.
